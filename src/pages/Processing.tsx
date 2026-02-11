@@ -47,15 +47,11 @@ const Processing = () => {
           </div>
         </div>
 
-        <motion.h2
-          className="text-2xl font-bold text-foreground mb-2"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-        >
-          {allDone ? "Analysis Complete!" : "Analyzing Your Profile"}
+        <motion.h2 className="text-2xl font-bold text-foreground mb-2" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+          {allDone ? "Assessment Complete!" : "Evaluating Your Business"}
         </motion.h2>
         <p className="text-muted-foreground text-sm mb-10">
-          {allDone ? "Redirecting to your personalized dashboard..." : "Our AI is crunching the numbers for you."}
+          {allDone ? "Redirecting to your readiness report..." : "Faleh is auditing your franchise readiness."}
         </p>
 
         {/* Steps */}
@@ -85,7 +81,7 @@ const Processing = () => {
                 ) : (
                   <div className="h-5 w-5 rounded-full border border-border flex-shrink-0" />
                 )}
-                <span className={`text-sm ${isDone ? "text-foreground" : isActive ? "text-foreground" : "text-muted-foreground"}`}>
+                <span className={`text-sm ${isDone || isActive ? "text-foreground" : "text-muted-foreground"}`}>
                   {step.label}
                 </span>
               </motion.div>
