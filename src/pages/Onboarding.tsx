@@ -1,106 +1,103 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, ArrowRight, User, DollarSign, MapPin, Loader2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Loader2, Save, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Slider } from "@/components/ui/slider";
-import { submitOnboarding, type OnboardingData } from "@/lib/api";
-
-const BUDGET_RANGES = [
-  { label: "SAR 100K – 300K", min: 100000, max: 300000 },
-  { label: "SAR 300K – 500K", min: 300000, max: 500000 },
-  { label: "SAR 500K – 1M", min: 500000, max: 1000000 },
-  { label: "SAR 1M+", min: 1000000, max: 5000000 },
-];
-
-const INTERESTS = ["Food & Beverage", "Retail", "Health & Fitness", "Education", "Technology", "Cloud Kitchen"];
-const LOCATIONS = ["Riyadh", "Jeddah", "Dammam", "Makkah", "Madinah", "Other"];
-
-const steps = [
-  { icon: User, title: "About You" },
-  { icon: DollarSign, title: "Budget" },
-  { icon: MapPin, title: "Preferences" },
-];
+import { Textarea } from "@/components/ui/textarea";
+import { Progress } from "@/components/ui/progress";
+import {
+  ASSESSMENT_PHASES,
+  calculateScore,
+  submitAssessment,
+  type AssessmentAnswers,
+} from "@/lib/api";
 
 const Onboarding = () => {
   const navigate = useNavigate();
-  const [step, setStep] = useState(0);
+  const [phaseIndex, setPhaseIndex] = useState(-1); // -1 = intro step
   const [loading, setLoading] = useState(false);
-  const [name, setName] = useState("");
+  const [businessName, setBusinessName] = useState("");
+  const [contactName, setContactName] = useState("");
   const [email, setEmail] = useState("");
-  const [budgetIdx, setBudgetIdx] = useState(1);
-  const [customBudget, setCustomBudget] = useState([400000]);
-  const [location, setLocation] = useState("");
-  const [interests, setInterests] = useState<string[]>([]);
+  const [answers, setAnswers] = useState<AssessmentAnswers>({});
 
-  const toggleInterest = (i: string) =>
-    setInterests((prev) => (prev.includes(i) ? prev.filter((x) => x !== i) : [...prev, i]));
+  const setAnswer = (qId: string, value: string) =>
+    setAnswers((prev) => ({ ...prev, [qId]: value }));
+
+  const currentPhase = phaseIndex >= 0 ? ASSESSMENT_PHASES[phaseIndex] : null;
+  const totalPhases = ASSESSMENT_PHASES.length;
+  const progressPct = ((phaseIndex + 1) / (totalPhases + 1)) * 100;
 
   const canNext =
-    step === 0 ? name.trim() && email.trim() :
-    step === 1 ? true :
-    location && interests.length > 0;
+    phaseIndex === -1
+      ? businessName.trim() && contactName.trim() && email.trim()
+      : currentPhase?.questions.every((q) => {
+          if (q.type === "text") return (answers[q.id]?.trim().length ?? 0) > 0;
+          return !!answers[q.id];
+        });
 
   const handleSubmit = async () => {
     setLoading(true);
-    const data: OnboardingData = {
-      name: name.trim(),
-      email: email.trim(),
-      budgetMin: BUDGET_RANGES[budgetIdx]?.min ?? customBudget[0],
-      budgetMax: BUDGET_RANGES[budgetIdx]?.max ?? customBudget[0],
-      location,
-      interests,
-    };
-    await submitOnboarding(data);
+    const score = calculateScore(answers);
+    await submitAssessment({ businessName, contactName, email, answers, score });
+    // Store score in sessionStorage for the results page
+    sessionStorage.setItem("faleh_score", JSON.stringify(score));
+    sessionStorage.setItem("faleh_answers", JSON.stringify(answers));
     navigate("/processing");
   };
 
   return (
-    <div className="min-h-screen gradient-hero flex items-center justify-center px-4">
-      <div className="w-full max-w-lg">
+    <div className="min-h-screen gradient-hero flex items-center justify-center px-4 py-10">
+      <div className="w-full max-w-2xl">
         {/* Logo */}
-        <div className="flex items-center gap-2 mb-10">
+        <div className="flex items-center gap-2 mb-8">
           <button onClick={() => navigate("/")} className="flex items-center gap-2 group">
             <div className="w-8 h-8 rounded-lg gradient-emerald flex items-center justify-center font-bold text-primary-foreground text-sm">ف</div>
             <span className="text-xl font-bold text-foreground">Faleh</span>
           </button>
         </div>
 
-        {/* Progress */}
-        <div className="flex items-center gap-2 mb-8">
-          {steps.map((s, i) => (
+        {/* Phase indicators */}
+        <div className="flex items-center gap-3 mb-3">
+          {[{ title: "Business Info", icon: "📋" }, ...ASSESSMENT_PHASES.map((p) => ({ title: p.title, icon: p.icon }))].map((s, i) => (
             <div key={s.title} className="flex items-center gap-2 flex-1">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold transition-all ${
-                i <= step ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"
-              }`}>
-                {i + 1}
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold transition-all ${
+                  i <= phaseIndex + 1 ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"
+                }`}
+              >
+                {s.icon}
               </div>
-              <span className={`text-sm hidden sm:block ${i <= step ? "text-foreground" : "text-muted-foreground"}`}>
+              <span className={`text-xs hidden sm:block ${i <= phaseIndex + 1 ? "text-foreground" : "text-muted-foreground"}`}>
                 {s.title}
               </span>
-              {i < steps.length - 1 && (
-                <div className={`flex-1 h-px mx-2 ${i < step ? "bg-primary" : "bg-border"}`} />
-              )}
+              {i < totalPhases && <div className={`flex-1 h-px mx-1 ${i < phaseIndex + 1 ? "bg-primary" : "bg-border"}`} />}
             </div>
           ))}
         </div>
+        <Progress value={progressPct} className="mb-8 h-1.5" />
 
         {/* Card */}
-        <motion.div
-          className="rounded-2xl gradient-card border border-border shadow-card p-8"
-          layout
-        >
+        <motion.div className="rounded-2xl gradient-card border border-border shadow-card p-8" layout>
           <AnimatePresence mode="wait">
-            {step === 0 && (
-              <motion.div key="step0" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.3 }}>
-                <h2 className="text-2xl font-bold text-foreground mb-1">Let's get started</h2>
-                <p className="text-muted-foreground text-sm mb-8">Tell us a bit about yourself.</p>
+            {/* Intro Step */}
+            {phaseIndex === -1 && (
+              <motion.div key="intro" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.3 }}>
+                <div className="flex items-center gap-3 mb-1">
+                  <Building2 className="h-6 w-6 text-primary" />
+                  <h2 className="text-2xl font-bold text-foreground">Business Information</h2>
+                </div>
+                <p className="text-muted-foreground text-sm mb-8">Tell us about the business you'd like evaluated for franchise readiness.</p>
                 <div className="space-y-5">
                   <div>
-                    <Label htmlFor="name">Full Name</Label>
-                    <Input id="name" placeholder="Ahmed Al-Rashid" value={name} onChange={(e) => setName(e.target.value)} className="mt-2" />
+                    <Label htmlFor="businessName">Business / Brand Name</Label>
+                    <Input id="businessName" placeholder="e.g. Al Noor Café" value={businessName} onChange={(e) => setBusinessName(e.target.value)} className="mt-2" />
+                  </div>
+                  <div>
+                    <Label htmlFor="contactName">Contact Name</Label>
+                    <Input id="contactName" placeholder="Ahmed Al-Rashid" value={contactName} onChange={(e) => setContactName(e.target.value)} className="mt-2" />
                   </div>
                   <div>
                     <Label htmlFor="email">Email Address</Label>
@@ -110,78 +107,62 @@ const Onboarding = () => {
               </motion.div>
             )}
 
-            {step === 1 && (
-              <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.3 }}>
-                <h2 className="text-2xl font-bold text-foreground mb-1">Investment Budget</h2>
-                <p className="text-muted-foreground text-sm mb-8">Select a range that fits your investment capacity.</p>
-                <div className="grid grid-cols-2 gap-3 mb-6">
-                  {BUDGET_RANGES.map((range, i) => (
-                    <button
-                      key={range.label}
-                      onClick={() => setBudgetIdx(i)}
-                      className={`p-4 rounded-xl border text-sm font-medium transition-all text-left ${
-                        budgetIdx === i
-                          ? "border-primary bg-primary/10 text-primary"
-                          : "border-border bg-secondary/50 text-muted-foreground hover:border-muted-foreground"
-                      }`}
-                    >
-                      {range.label}
-                    </button>
-                  ))}
+            {/* Assessment Phases */}
+            {currentPhase && (
+              <motion.div
+                key={currentPhase.id}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.3 }}
+              >
+                <div className="flex items-center gap-3 mb-1">
+                  <span className="text-2xl">{currentPhase.icon}</span>
+                  <div>
+                    <h2 className="text-2xl font-bold text-foreground">
+                      Phase {phaseIndex + 1}: {currentPhase.title}
+                    </h2>
+                    <p className="text-muted-foreground text-sm">{currentPhase.subtitle} — Weight: {currentPhase.weight}%</p>
+                  </div>
                 </div>
-                <div>
-                  <Label className="text-xs text-muted-foreground">Fine-tune: SAR {customBudget[0].toLocaleString()}</Label>
-                  <Slider
-                    value={customBudget}
-                    onValueChange={setCustomBudget}
-                    min={50000}
-                    max={5000000}
-                    step={50000}
-                    className="mt-3"
-                  />
-                </div>
-              </motion.div>
-            )}
 
-            {step === 2 && (
-              <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.3 }}>
-                <h2 className="text-2xl font-bold text-foreground mb-1">Your Preferences</h2>
-                <p className="text-muted-foreground text-sm mb-8">Where and what are you interested in?</p>
-                <div className="mb-6">
-                  <Label className="mb-3 block">Location</Label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {LOCATIONS.map((loc) => (
-                      <button
-                        key={loc}
-                        onClick={() => setLocation(loc)}
-                        className={`p-3 rounded-lg border text-sm font-medium transition-all ${
-                          location === loc
-                            ? "border-primary bg-primary/10 text-primary"
-                            : "border-border bg-secondary/50 text-muted-foreground hover:border-muted-foreground"
-                        }`}
-                      >
-                        {loc}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <Label className="mb-3 block">Industries of Interest</Label>
-                  <div className="flex flex-wrap gap-2">
-                    {INTERESTS.map((int) => (
-                      <button
-                        key={int}
-                        onClick={() => toggleInterest(int)}
-                        className={`px-4 py-2 rounded-full border text-sm font-medium transition-all ${
-                          interests.includes(int)
-                            ? "border-primary bg-primary/10 text-primary"
-                            : "border-border bg-secondary/50 text-muted-foreground hover:border-muted-foreground"
-                        }`}
-                      >
-                        {int}
-                      </button>
-                    ))}
-                  </div>
+                <div className="space-y-6 mt-8">
+                  {currentPhase.questions.map((q) => (
+                    <div key={q.id} className="space-y-3">
+                      <Label className="text-sm leading-relaxed">
+                        <span className="text-primary font-mono mr-2">{q.id}</span>
+                        {q.question}
+                        <span className="text-muted-foreground ml-1 text-xs">({q.maxPoints} pts)</span>
+                      </Label>
+
+                      {q.type === "select" && q.options && (
+                        <div className="grid gap-2">
+                          {q.options.map((opt) => (
+                            <button
+                              key={opt.value}
+                              onClick={() => setAnswer(q.id, opt.value)}
+                              className={`p-3 rounded-xl border text-sm font-medium transition-all text-left ${
+                                answers[q.id] === opt.value
+                                  ? "border-primary bg-primary/10 text-primary"
+                                  : "border-border bg-secondary/50 text-muted-foreground hover:border-muted-foreground"
+                              }`}
+                            >
+                              {opt.label}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
+                      {q.type === "text" && (
+                        <Textarea
+                          placeholder="Describe in detail..."
+                          value={answers[q.id] || ""}
+                          onChange={(e) => setAnswer(q.id, e.target.value)}
+                          className="min-h-[100px]"
+                        />
+                      )}
+                    </div>
+                  ))}
                 </div>
               </motion.div>
             )}
@@ -191,23 +172,31 @@ const Onboarding = () => {
           <div className="flex justify-between mt-8 pt-6 border-t border-border">
             <Button
               variant="ghost"
-              onClick={() => step === 0 ? navigate("/") : setStep(step - 1)}
+              onClick={() => (phaseIndex <= -1 ? navigate("/") : setPhaseIndex(phaseIndex - 1))}
               className="text-muted-foreground"
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back
             </Button>
-            {step < 2 ? (
-              <Button onClick={() => setStep(step + 1)} disabled={!canNext}>
-                Continue
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            ) : (
-              <Button onClick={handleSubmit} disabled={!canNext || loading}>
-                {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                {loading ? "Submitting..." : "Start Analysis"}
-              </Button>
-            )}
+
+            <div className="flex gap-2">
+              {phaseIndex >= 0 && (
+                <Button variant="outline" size="sm" className="text-xs">
+                  <Save className="mr-1 h-3 w-3" /> Save Draft
+                </Button>
+              )}
+              {phaseIndex < totalPhases - 1 ? (
+                <Button onClick={() => setPhaseIndex(phaseIndex + 1)} disabled={!canNext}>
+                  Continue
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              ) : (
+                <Button onClick={handleSubmit} disabled={!canNext || loading}>
+                  {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                  {loading ? "Submitting..." : "Submit Assessment"}
+                </Button>
+              )}
+            </div>
           </div>
         </motion.div>
       </div>

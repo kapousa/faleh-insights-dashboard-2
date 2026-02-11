@@ -1,23 +1,23 @@
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowRight, BarChart3, Shield, Zap } from "lucide-react";
+import { ArrowRight, ClipboardCheck, BarChart3, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const features = [
   {
-    icon: Zap,
-    title: "AI-Powered Matching",
-    description: "Our algorithm analyzes 200+ data points to find your perfect franchise fit.",
+    icon: ClipboardCheck,
+    title: "Diagnostic Assessment",
+    description: "Evaluate your business across brand viability, operations readiness, and financial health.",
   },
   {
     icon: BarChart3,
-    title: "ROI Projections",
-    description: "Detailed financial modeling with 5-year profit forecasts and break-even analysis.",
+    title: "Readiness Score",
+    description: "Get a clear 0–100 score with category breakdown based on Ajman Chamber standards.",
   },
   {
-    icon: Shield,
-    title: "Risk Assessment",
-    description: "Comprehensive legal and market risk evaluation for every recommendation.",
+    icon: FileText,
+    title: "AI-Powered Report",
+    description: "Receive a detailed franchise readiness report with actionable improvement recommendations.",
   },
 ];
 
@@ -36,10 +36,10 @@ const Index = () => {
         </div>
         <div className="hidden md:flex items-center gap-8">
           <button onClick={() => navigate("/dashboard")} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-            Dashboard
+            Results
           </button>
           <Button size="sm" onClick={() => navigate("/onboarding")}>
-            Get Started
+            Start Assessment
           </Button>
         </div>
       </nav>
@@ -47,13 +47,9 @@ const Index = () => {
       {/* Hero */}
       <section className="max-w-7xl mx-auto px-6 pt-20 pb-32">
         <div className="max-w-3xl">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
             <span className="inline-block px-3 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20 mb-6">
-              AI-Powered Franchise Intelligence
+              Business Readiness Auditor — Ajman Chamber Standards
             </span>
           </motion.div>
 
@@ -63,8 +59,8 @@ const Index = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
           >
-            Your Path to Successful Investment{" "}
-            <span className="text-primary">Starts with Faleh</span>
+            Is Your Business{" "}
+            <span className="text-primary">Ready to Franchise?</span>
           </motion.h1>
 
           <motion.p
@@ -73,7 +69,7 @@ const Index = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
           >
-            Get personalized franchise recommendations backed by market data, AI analysis, and financial projections tailored to your budget and goals.
+            Faleh evaluates your business for franchise readiness across brand power, operational systems, and financial health — powered by AI and the Ajman Chamber evaluation framework.
           </motion.p>
 
           <motion.div
@@ -82,21 +78,12 @@ const Index = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.3 }}
           >
-            <Button
-              size="lg"
-              className="text-base px-8 py-6 glow-emerald"
-              onClick={() => navigate("/onboarding")}
-            >
-              Start Free Analysis
+            <Button size="lg" className="text-base px-8 py-6 glow-emerald" onClick={() => navigate("/onboarding")}>
+              Start Free Assessment
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
-            <Button
-              variant="outline"
-              size="lg"
-              className="text-base px-8 py-6"
-              onClick={() => navigate("/dashboard")}
-            >
-              View Demo Dashboard
+            <Button variant="outline" size="lg" className="text-base px-8 py-6" onClick={() => navigate("/dashboard")}>
+              View Demo Report
             </Button>
           </motion.div>
         </div>
@@ -109,9 +96,9 @@ const Index = () => {
           transition={{ duration: 0.8, delay: 0.5 }}
         >
           {[
-            { value: "500+", label: "Franchises Analyzed" },
-            { value: "92%", label: "Match Accuracy" },
-            { value: "SAR 2B+", label: "Investment Guided" },
+            { value: "16", label: "Assessment Criteria" },
+            { value: "3", label: "Evaluation Categories" },
+            { value: "100%", label: "Ajman Chamber Aligned" },
           ].map((stat) => (
             <div key={stat.label}>
               <div className="text-2xl md:text-3xl font-bold text-primary">{stat.value}</div>
