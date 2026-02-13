@@ -89,9 +89,7 @@ const handleRequestFinalReport = async () => {
             <p className="text-xs text-muted-foreground">Ajman Chamber Franchise Standards</p>
           </div>
           {!isSent ? (
-            <Button onClick={handleRequestFinalReport} disabled={isSubmitting} className="gradient-emerald text-white">
-              {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Generating...</> : <><MailCheck className="mr-2 h-4 w-4" /> Email Me Report</>}
-            </Button>
+              <h3 className="text-emerald-500 font-medium text-sm">Detailed report sent to your email.</h3>
           ) : (
             <div className="flex items-center gap-2 text-emerald-500 font-medium text-sm">
               <MailCheck size={18} /> Sent to Email
