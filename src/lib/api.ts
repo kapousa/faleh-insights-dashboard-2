@@ -1,5 +1,7 @@
 // Modular API layer — swap WEBHOOK_URL easily
-const WEBHOOK_URL = "https://faleh.app.n8n.cloud/webhook/9546ae5f-93cc-49b3-8806-881f3627c808";
+const WEBHOOK_URL = "https://faleh.app.n8n.cloud/webhook-test/9546ae5f-93cc-49b3-8806-881f3627c808";
+const WEBHOOK_SEND_OTP_URL = "https://faleh.app.n8n.cloud/webhook-test/eb3e2796-d696-48de-8416-9e44b0b0d37a";
+
 
 // ─── Assessment Questions ───
 
