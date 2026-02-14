@@ -53,7 +53,7 @@ const Dashboard = () => {
             </h1>
           </div>
           <Button className="bg-[#0a1d37] hover:bg-[#5c21ff] text-white rounded-none font-black uppercase italic px-8 h-12 shadow-lg transition-all">
-            <Download size={16} className="mr-2" /> Download Full Report
+            Full Report sent by Email
           </Button>
         </header>
 
