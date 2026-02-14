@@ -1,5 +1,8 @@
 // Modular API layer — swap WEBHOOK_URL easily
-const WEBHOOK_URL = "https://faleh.app.n8n.cloud/webhook-test/9546ae5f-93cc-49b3-8806-881f3627c808";
+//Testing
+//const WEBHOOK_URL = "https://faleh.app.n8n.cloud/webhook-test/9546ae5f-93cc-49b3-8806-881f3627c808";
+//Production
+const WEBHOOK_URL = "https://faleh.app.n8n.cloud/webhook/9546ae5f-93cc-49b3-8806-881f3627c808";
 const WEBHOOK_SEND_OTP_URL = "https://faleh.app.n8n.cloud/webhook-test/eb3e2796-d696-48de-8416-9e44b0b0d37a";
 
 
@@ -26,6 +29,7 @@ export interface AssessmentPhase {
   icon: string;
   weight: number; // percentage
   questions: AssessmentQuestion[];
+  description: string;
 }
 
 export const ASSESSMENT_PHASES: AssessmentPhase[] = [
@@ -35,6 +39,7 @@ export const ASSESSMENT_PHASES: AssessmentPhase[] = [
     subtitle: "Concept & Brand Viability",
     icon: "🏷️",
     weight: 30,
+    description: "This phase evaluates your brand's market presence, the uniqueness of your concept within the UAE competitive landscape, and the legal protection of your intellectual property.",
     questions: [
       {
         id: "A1",
@@ -94,6 +99,7 @@ export const ASSESSMENT_PHASES: AssessmentPhase[] = [
     subtitle: "Operational Readiness & Scalability",
     icon: "⚙️",
     weight: 40,
+    description: "The core of franchising is replicability. We review your documentation, training systems, and the ease of transferring operational knowledge to third parties to ensure consistent quality.",
     questions: [
       {
         id: "B1",
@@ -168,6 +174,7 @@ export const ASSESSMENT_PHASES: AssessmentPhase[] = [
     subtitle: "Financial Performance & Infrastructure",
     icon: "💰",
     weight: 30,
+    description: "A successful franchise must be profitable for both parties. This section validates your financial model, ROI timelines, and compliance with UAE business licensing and regulations.",
     questions: [
       {
         id: "C1",
@@ -226,7 +233,6 @@ export const ASSESSMENT_PHASES: AssessmentPhase[] = [
     ],
   },
 ];
-
 // ─── Scoring Logic ───
 
 export interface AssessmentAnswers {
