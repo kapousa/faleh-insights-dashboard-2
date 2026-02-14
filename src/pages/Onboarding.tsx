@@ -85,10 +85,15 @@ const Onboarding = () => {
              style={{ backgroundImage: 'radial-gradient(#5c21ff 2px, transparent 2px)', backgroundSize: '30px 30px' }} />
 
         <div className="relative z-10">
-          <div className="flex items-center gap-3 mb-12">
-            <div className="w-10 h-10 bg-[#5c21ff] flex items-center justify-center font-black italic text-xl shadow-lg">F</div>
-            <span className="text-2xl font-black uppercase italic tracking-tighter">Faleh</span>
-          </div>
+          <button
+      onClick={() => navigate("/")}
+      className="flex items-center gap-3 mb-12 group hover:opacity-80 transition-all cursor-pointer bg-transparent border-none p-0 text-left"
+    >
+      <div className="w-10 h-10 bg-[#5c21ff] flex items-center justify-center font-black italic text-xl shadow-lg group-hover:scale-110 transition-transform">
+        F
+      </div>
+      <span className="text-2xl font-black uppercase italic tracking-tighter">Faleh</span>
+    </button>
 
           <div className="space-y-8">
             <div>

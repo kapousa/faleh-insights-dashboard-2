@@ -29,11 +29,18 @@ const Dashboard = () => {
       {/* Sidebar */}
       <aside className={`border-r border-slate-100 bg-white transition-all ${sidebarOpen ? "w-64" : "w-20"}`}>
         <div className="p-6 border-b border-slate-50 flex items-center justify-between">
-          {sidebarOpen && <span className="font-black uppercase italic tracking-tighter">Faleh Insights</span>}
-          <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-1 hover:bg-slate-50 rounded text-slate-400">
-            {sidebarOpen ? <ChevronLeft size={20}/> : <ChevronRight size={20}/>}
-          </button>
-        </div>
+    {sidebarOpen && (
+      <button
+        onClick={() => navigate("/")}
+        className="font-black uppercase italic tracking-tighter hover:text-[#5c21ff] transition-colors"
+      >
+        Faleh Insights
+      </button>
+    )}
+    <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-1 hover:bg-slate-50 rounded text-slate-400">
+      {sidebarOpen ? <ChevronLeft size={20}/> : <ChevronRight size={20}/>}
+    </button>
+  </div>
         <nav className="p-4 space-y-4">
            <div className="flex items-center gap-3 p-3 bg-[#5c21ff]/5 text-[#5c21ff] font-black uppercase italic text-xs border-r-4 border-[#5c21ff]">
               <LayoutDashboard size={18} /> {sidebarOpen && "Audit Analysis"}
