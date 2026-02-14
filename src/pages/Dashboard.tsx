@@ -27,6 +27,19 @@ const Dashboard = () => {
     }
   }, []);
 
+  const sendOTP = async (userEmail: string) => {
+  try {
+    await fetch("YOUR_N8N_WEBHOOK_URL", {
+      method: "POST",
+      body: JSON.stringify({ email: userEmail }),
+      headers: { "Content-Type": "application/json" },
+    });
+    console.log("OTP Sent to", userEmail);
+  } catch (error) {
+    console.error("Error sending OTP", error);
+  }
+};
+
 // Dashboard.tsx - Updated handleRequestFinalReport
 const handleRequestFinalReport = async () => {
   setIsSubmitting(true);
@@ -86,12 +99,12 @@ const handleRequestFinalReport = async () => {
         <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-md border-b px-6 py-4 flex items-center justify-between">
           <div>
             <h1 className="text-xl font-bold">Readiness Report</h1>
-            <p className="text-xs text-muted-foreground">Ajman Chamber Franchise Standards</p>
+            <p className="text-xs text-muted-foreground"></p>
           </div>
           {!isSent ? (
-              <h3 className="text-emerald-500 font-medium text-sm">Detailed report sent to your email.</h3>
+              <h3 className= "text-[#5c21ff] font-medium text-sm">Detailed report sent to your email.</h3>
           ) : (
-            <div className="flex items-center gap-2 text-emerald-500 font-medium text-sm">
+            <div className="flex items-center gap-2 text-[#5c21ff] font-medium text-sm">
               <MailCheck size={18} /> Sent to Email
             </div>
           )}
@@ -102,7 +115,7 @@ const handleRequestFinalReport = async () => {
   <motion.div
     initial={{ opacity: 0, y: -10 }}
     animate={{ opacity: 1, y: 0 }}
-    className="bg-emerald-500/10 border border-emerald-500/30 p-4 rounded-xl flex items-center gap-3 text-emerald-700 text-sm mb-6"
+    className="bg-emerald-500/10 border border-emerald-500/30 p-4 rounded-xl flex items-center gap-3 text-[#5c21ff] text-sm mb-6"
   >
     <MailCheck size={18} />
     <div>

@@ -1,7 +1,7 @@
 // Modular API layer — swap WEBHOOK_URL easily
 const WEBHOOK_URL = "https://faleh.app.n8n.cloud/webhook/9546ae5f-93cc-49b3-8806-881f3627c808";
 
-// ─── Assessment Questions (Ajman Chamber Evaluation Sheet) ───
+// ─── Assessment Questions ───
 
 export interface AssessmentOption {
   label: string;
@@ -58,7 +58,7 @@ export const ASSESSMENT_PHASES: AssessmentPhase[] = [
       },
       {
         id: "A3",
-        question: "Describe your unique selling proposition (USP). What makes your brand distinctly different from competitors in Ajman and the UAE?",
+        question: "Describe your unique selling proposition (USP). What makes your brand distinctly different from competitors in the UAE?",
         type: "text",
         maxPoints: 8,
       },
@@ -75,7 +75,7 @@ export const ASSESSMENT_PHASES: AssessmentPhase[] = [
       },
       {
         id: "A5",
-        question: "How easily can your product/service be adapted to different neighborhoods or regions outside of Ajman?",
+        question: "How adaptable is your business model to the diverse demographics and consumer behaviors found across the UAE?",
         type: "select",
         maxPoints: 5,
         options: [
@@ -213,7 +213,7 @@ export const ASSESSMENT_PHASES: AssessmentPhase[] = [
       },
       {
         id: "C5",
-        question: "Are all business licenses and permits (including health/safety) current and in good standing with Ajman authorities?",
+        question: "Are all business licenses and permits—including Department of Economy and Tourism (DET), Municipality, and Health/Safety approvals—current, in good standing, and compliant with both Federal and Emirate-specific regulations?",
         type: "select",
         maxPoints: 3,
         options: [

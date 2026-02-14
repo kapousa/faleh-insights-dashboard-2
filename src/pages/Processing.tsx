@@ -91,13 +91,13 @@ const Processing = () => {
             >
               <div className="relative inline-block mb-6">
                 <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ type: "spring", damping: 12 }}
-                  className="w-20 h-20 bg-emerald-500 rounded-full flex items-center justify-center shadow-xl shadow-emerald-500/20"
-                >
-                  <CheckCircle2 className="text-white w-10 h-10" />
-                </motion.div>
+  initial={{ scale: 0 }}
+  animate={{ scale: 1 }}
+  transition={{ type: "spring", damping: 12 }}
+  className="w-20 h-20 bg-[#5c21ff] rounded-full flex items-center justify-center shadow-xl shadow-[#5c21ff]/20"
+>
+  <CheckCircle2 className="text-white w-10 h-10" />
+</motion.div>
                 <motion.div
                   animate={{ rotate: 360 }}
                   transition={{ duration: 10, repeat: Infinity, ease: "linear" }}

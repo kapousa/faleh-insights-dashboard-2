@@ -73,9 +73,18 @@ const Onboarding = () => {
             </div>
           ))}
         </div>
+
         <Progress value={progressPct} className="mb-8 h-1.5" />
 
         <motion.div className="rounded-2xl bg-card border border-border shadow-card p-8" layout>
+          <div className="mb-8 flex items-center justify-between border-b border-slate-100 pb-4">
+  <h1 className="text-2xl font-black uppercase italic tracking-tighter text-[#5c21ff]">
+    Faleh Wizard
+  </h1>
+  <div className="text-[10px] font-bold text-slate-300 uppercase tracking-[0.2em]">
+    Franchise Audit v2.0
+  </div>
+</div>
           <AnimatePresence mode="wait">
             {phaseIndex === -1 ? (
               <motion.div key="intro" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>

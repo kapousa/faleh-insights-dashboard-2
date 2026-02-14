@@ -6,60 +6,44 @@
 
 @layer base {
   :root {
-    --background: 222 47% 6%;
-    --foreground: 210 40% 98%;
+    /* الخلفية البيضاء الأساسية */
+    --background: 0 0% 100%;
+    --foreground: 222 47% 11%;
 
-    --card: 222 47% 9%;
-    --card-foreground: 210 40% 98%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
 
-    --popover: 222 47% 9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
 
-    --primary: 160 84% 39%;
-    --primary-foreground: 222 47% 6%;
+    /* البنفسجي الإمبراطوري #5c21ff */
+    --primary: 256 100% 56%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 222 47% 14%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222 47% 11%;
 
-    --muted: 222 30% 16%;
-    --muted-foreground: 215 20% 55%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
 
-    --accent: 160 84% 39%;
-    --accent-foreground: 222 47% 6%;
+    /* الذهبي الملكي #ffcc00 */
+    --accent: 48 100% 50%;
+    --accent-foreground: 222 47% 11%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 222 30% 18%;
-    --input: 222 30% 18%;
-    --ring: 160 84% 39%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 256 100% 56%;
 
-    --radius: 0.75rem;
+    --radius: 0.5rem;
 
-    --sidebar-background: 222 47% 8%;
-    --sidebar-foreground: 210 40% 85%;
-    --sidebar-primary: 160 84% 39%;
-    --sidebar-primary-foreground: 222 47% 6%;
-    --sidebar-accent: 222 30% 14%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 222 30% 15%;
-    --sidebar-ring: 160 84% 39%;
-
-    /* Custom tokens */
-    --emerald-glow: 160 84% 39%;
-    --navy-deep: 222 47% 6%;
-    --navy-card: 222 47% 9%;
-    --navy-elevated: 222 47% 12%;
-    --text-dim: 215 20% 55%;
-    --gradient-hero: linear-gradient(135deg, hsl(222 47% 6%) 0%, hsl(222 47% 12%) 50%, hsl(220 50% 8%) 100%);
-    --gradient-emerald: linear-gradient(135deg, hsl(160 84% 39%) 0%, hsl(160 70% 32%) 100%);
-    --gradient-card: linear-gradient(145deg, hsl(222 47% 10%) 0%, hsl(222 47% 7%) 100%);
-    --shadow-emerald: 0 0 40px -10px hsl(160 84% 39% / 0.3);
-    --shadow-card: 0 4px 24px -4px hsl(222 47% 4% / 0.5);
-  }
-
-  .dark {
-    /* Same as root since this is a dark-first design */
+    /* إزالة الأخطاء القديمة عبر استبدالها بتعريفات جديدة ونظيفة */
+    --gradient-hero: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    --gradient-brand: linear-gradient(135deg, #5c21ff 0%, #4214bc 100%);
+    --shadow-brand: 0 10px 30px -10px rgba(92, 33, 255, 0.3);
+    --shadow-card: 0 2px 15px -3px rgba(0, 0, 0, 0.07), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
   }
 }
 
@@ -67,33 +51,22 @@
   * {
     @apply border-border;
   }
-
   body {
-    @apply bg-background text-foreground font-sans antialiased;
-    font-family: 'Inter', sans-serif;
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
 
-@layer utilities {
-  .gradient-hero {
-    background: var(--gradient-hero);
-  }
-  .gradient-emerald {
-    background: var(--gradient-emerald);
-  }
-  .gradient-card {
-    background: var(--gradient-card);
-  }
-  .shadow-emerald {
-    box-shadow: var(--shadow-emerald);
-  }
-  .shadow-card {
-    box-shadow: var(--shadow-card);
-  }
-  .text-dim {
-    color: hsl(var(--text-dim));
-  }
-  .glow-emerald {
-    box-shadow: 0 0 20px hsl(160 84% 39% / 0.2), 0 0 60px hsl(160 84% 39% / 0.1);
-  }
+/* تحسين شكل شريط التقدم ليكون بنفسجياً */
+[data-radix-progress-indicator] {
+  background-color: #5c21ff !important;
+}
+
+/* تنسيق عام للأزرار لضمان ظهور النص بوضوح */
+.btn-primary {
+  @apply bg-[#5c21ff] text-white hover:bg-[#4214bc] transition-colors;
+}
+
+.btn-accent {
+  @apply bg-[#ffcc00] text-[#0a1d37] hover:bg-[#e6b800] transition-colors;
 }

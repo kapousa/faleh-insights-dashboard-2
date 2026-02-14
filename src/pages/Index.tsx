@@ -12,7 +12,7 @@ const features = [
   {
     icon: BarChart3,
     title: "Readiness Score",
-    description: "Get a clear 0–100 score with category breakdown based on Ajman Chamber standards.",
+    description: "Get a clear 0–100 score with category breakdown based on The UAE standards.",
   },
   {
     icon: FileText,
@@ -23,113 +23,37 @@ const features = [
 
 const Index = () => {
   const navigate = useNavigate();
-
   return (
-    <div className="min-h-screen gradient-hero">
-      {/* Nav */}
-      <nav className="flex items-center justify-between px-6 py-5 max-w-7xl mx-auto">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg gradient-emerald flex items-center justify-center font-bold text-primary-foreground text-sm">
-            ف
-          </div>
-          <span className="text-xl font-bold text-foreground tracking-tight">Faleh</span>
-        </div>
-        <div className="hidden md:flex items-center gap-8">
-          <button onClick={() => navigate("/dashboard")} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-            Results
-          </button>
-          <Button size="sm" onClick={() => navigate("/onboarding")}>
-            Start Assessment
-          </Button>
+    <div className="min-h-screen bg-white text-[#0a1d37] font-sans">
+      <nav className="flex items-center justify-between px-10 py-6 border-b border-slate-100">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-[#5c21ff] rounded-lg flex items-center justify-center font-black text-white italic text-xl">F</div>
+          <span className="text-2xl font-black tracking-tighter uppercase italic">Faleh</span>
         </div>
       </nav>
 
-      {/* Hero */}
-      <section className="max-w-7xl mx-auto px-6 pt-20 pb-32">
-        <div className="max-w-3xl">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
-            <span className="inline-block px-3 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20 mb-6">
-              Business Readiness Auditor — Ajman Chamber Standards
-            </span>
-          </motion.div>
-
-          <motion.h1
-            className="text-4xl md:text-6xl lg:text-7xl font-bold text-foreground leading-[1.1] tracking-tight mb-6"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-          >
-            Is Your Business{" "}
-            <span className="text-primary">Ready to Franchise?</span>
-          </motion.h1>
-
-          <motion.p
-            className="text-lg md:text-xl text-muted-foreground max-w-xl mb-10 leading-relaxed"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-          >
-            Faleh evaluates your business for franchise readiness across brand power, operational systems, and financial health — powered by AI and the Ajman Chamber evaluation framework.
-          </motion.p>
-
-          <motion.div
-            className="flex flex-col sm:flex-row gap-4"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-          >
-            <Button size="lg" className="text-base px-8 py-6 glow-emerald" onClick={() => navigate("/onboarding")}>
-              Start Free Assessment
-              <ArrowRight className="ml-2 h-5 w-5" />
+      <main className="max-w-7xl mx-auto px-10 py-24 grid md:grid-cols-2 gap-16 items-center">
+        <div className="space-y-8">
+          <h1 className="text-7xl font-black leading-[0.9] uppercase italic tracking-tighter text-[#0a1d37]">
+            Franchising best <br/> <span className="text-[#5c21ff]">brands</span> made easy!
+          </h1>
+          <p className="text-slate-500 text-xl max-w-lg leading-relaxed font-medium">
+            Professional franchise feasibility studies and operational audits tailored for the Middle East market.
+          </p>
+          <div className="flex gap-4 pt-4">
+            <Button onClick={() => navigate("/onboarding")} className="bg-[#ffcc00] text-[#0a1d37] hover:bg-[#5c21ff] hover:text-white font-black px-12 py-8 rounded-none text-xl transition-all shadow-lg">
+              GET STARTED
             </Button>
-            <Button variant="outline" size="lg" className="text-base px-8 py-6" onClick={() => navigate("/dashboard")}>
-              View Demo Report
+            <Button variant="outline" className="bg-[#000000] border-[#5c21ff] text-[#aaaaaa] hover:bg-slate-50 font-black px-12 py-8 rounded-none text-xl">
+              LEARN MORE
             </Button>
-          </motion.div>
+          </div>
         </div>
-
-        {/* Stats */}
-        <motion.div
-          className="grid grid-cols-3 gap-6 mt-20 max-w-lg"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.8, delay: 0.5 }}
-        >
-          {[
-            { value: "16", label: "Assessment Criteria" },
-            { value: "3", label: "Evaluation Categories" },
-            { value: "100%", label: "Ajman Chamber Aligned" },
-          ].map((stat) => (
-            <div key={stat.label}>
-              <div className="text-2xl md:text-3xl font-bold text-primary">{stat.value}</div>
-              <div className="text-xs text-muted-foreground mt-1">{stat.label}</div>
-            </div>
-          ))}
-        </motion.div>
-      </section>
-
-      {/* Features */}
-      <section className="max-w-7xl mx-auto px-6 pb-32">
-        <div className="grid md:grid-cols-3 gap-6">
-          {features.map((feature, i) => (
-            <motion.div
-              key={feature.title}
-              className="p-6 rounded-xl gradient-card border border-border shadow-card"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.6 + i * 0.1 }}
-            >
-              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
-                <feature.icon className="h-5 w-5 text-primary" />
-              </div>
-              <h3 className="text-lg font-semibold text-foreground mb-2">{feature.title}</h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">{feature.description}</p>
-            </motion.div>
-          ))}
+        <div className="hidden md:block bg-slate-50 aspect-square rounded-full border-dashed border-2 border-slate-200">
+           {/* Placeholder for Hero Image */}
         </div>
-      </section>
+      </main>
     </div>
   );
 };
-
 export default Index;
