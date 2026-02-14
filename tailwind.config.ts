@@ -1,5 +1,5 @@
 import type { Config } from "tailwindcss";
-import animate from "tailwindcss-animate"; // نستخدم import بدلاً من require
+import * as animate from "tailwindcss-animate";
 
 export default {
   darkMode: ["class"],
