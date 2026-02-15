@@ -45,7 +45,7 @@ const Dashboard = () => {
            <div className="flex items-center gap-3 p-3 bg-[#5c21ff]/5 text-[#5c21ff] font-black uppercase italic text-xs border-r-4 border-[#5c21ff]">
               <LayoutDashboard size={18} /> {sidebarOpen && "Audit Analysis"}
            </div>
-           <button onClick={() => navigate("/onboarding")} className="flex items-center gap-3 p-3 text-slate-400 font-bold uppercase text-xs hover:text-[#0a1d37]">
+           <button onClick={() => navigate("/verify")} className="flex items-center gap-3 p-3 text-slate-400 font-bold uppercase text-xs hover:text-[#0a1d37]">
               <RefreshCw size={18} /> {sidebarOpen && "New Audit"}
            </button>
         </nav>
