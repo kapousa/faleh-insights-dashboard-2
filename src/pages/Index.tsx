@@ -41,12 +41,9 @@ const Index = () => {
             Professional franchise feasibility studies and operational audits tailored for the Middle East market.
           </p>
           <div className="flex gap-4 pt-4">
-            <Button
-  onClick={() => navigate("/verify")}
-  className="bg-[#5222dc] text-white font-black italic uppercase"
->
-  Get Started
-</Button>
+            <Button onClick={() => navigate("/verify")} className="bg-[#ffcc00] text-[#0a1d37] hover:bg-[#5c21ff] hover:text-white font-black px-12 py-8 rounded-none text-xl transition-all shadow-lg">
+              GET STARTED
+            </Button>
             <Button variant="outline" className="bg-[#000000] border-[#5c21ff] text-[#aaaaaa] hover:bg-slate-50 font-black px-12 py-8 rounded-none text-xl">
               LEARN MORE
             </Button>
