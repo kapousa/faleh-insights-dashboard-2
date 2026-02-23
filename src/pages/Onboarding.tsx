@@ -100,10 +100,11 @@ const Onboarding = () => {
                         onClick={() => navigate("/")}
                         className="flex items-center gap-3 mb-12 group hover:opacity-80 transition-all cursor-pointer bg-transparent border-none p-0 text-left"
                     >
-                        <div
-                            className="w-10 h-10 bg-[#5c21ff] flex items-center justify-center font-black italic text-xl shadow-lg group-hover:scale-110 transition-transform">
-                            F
-                        </div>
+                        <img
+        src="/logo.png"
+        alt="Faleh Logo"
+        className="w-10 h-10 object-contain rounded-lg shadow-lg group-hover:scale-110 transition-transform"
+    />
                         <span className="text-2xl font-black uppercase italic tracking-tighter">Faleh</span>
                     </button>
 

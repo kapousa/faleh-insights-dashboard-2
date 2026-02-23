@@ -1,9 +1,8 @@
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ClipboardCheck, BarChart3, FileText, Lightbulb, Zap, Shield } from "lucide-react";
+import { ClipboardCheck, BarChart3, FileText, Lightbulb } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-// 1. Features Section Design with English Content
 const FeaturesSection = () => (
   <section id="features-section" className="py-24 bg-slate-50 border-t border-slate-100">
     <div className="max-w-6xl mx-auto px-10">
@@ -59,8 +58,13 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-white text-[#0a1d37] font-sans">
       <nav className="flex items-center justify-between px-10 py-6 border-b border-slate-100">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-[#5c21ff] rounded-lg flex items-center justify-center font-black text-white italic text-xl">F</div>
+        <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate("/")}>
+          {/* UPDATED LOGO: ICON IMAGE */}
+          <img
+            src="/logo.png"
+            alt="Faleh Logo"
+            className="w-10 h-10 object-contain rounded-lg"
+          />
           <span className="text-2xl font-black tracking-tighter uppercase italic">Faleh</span>
         </div>
       </nav>
@@ -91,7 +95,6 @@ const Index = () => {
           </div>
         </div>
 
-        {/* Visual Animation Box */}
         <div className="hidden md:block bg-slate-50 aspect-square rounded-full border-dashed border-2 border-slate-200">
           <div className="relative w-full h-[500px] flex items-center justify-center">
             <div className="absolute inset-0 bg-gradient-to-br from-[#5c21ff]/10 to-transparent rounded-3xl -rotate-3 transform scale-95" />
@@ -142,7 +145,6 @@ const Index = () => {
         </div>
       </main>
 
-      {/* English Features Section */}
       <FeaturesSection />
     </div>
   );
