@@ -365,11 +365,16 @@ export interface AssessmentSubmission {
   businessName: string;
   contactName: string;
   email: string;
+  totalScore: number;
+  categoryLabel: string;
+  brandScore: number;
+  opsScore: number;
+  finScore: number;
   answers: AssessmentAnswers;
   score: ScoreResult;
 }
 
-export async function submitAssessment(data: AssessmentSubmission): Promise<{ success: boolean; sessionId: string }> {
+export async function submitAssessment(data: AssessmentSubmission): Promise<any> {
   try {
     const response = await fetch(WEBHOOK_URL, {
       method: "POST",
@@ -378,10 +383,11 @@ export async function submitAssessment(data: AssessmentSubmission): Promise<{ su
     });
 
     if (!response.ok) throw new Error("Webhook failed");
-    const result = await response.json();
-    return { success: true, sessionId: result.sessionId || "mock-session-123" };
-  } catch {
-    console.log("Using mock mode — webhook not connected");
+
+    // Return the actual JSON response from n8n
+    return await response.json();
+  } catch (error) {
+    console.log("Using mock mode — webhook not connected", error);
     return { success: true, sessionId: "mock-session-" + Date.now() };
   }
 }
