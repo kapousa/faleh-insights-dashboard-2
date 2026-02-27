@@ -2,7 +2,6 @@
 
 const WEBHOOK_URL = "/api-n8n/webhook/9546ae5f-93cc-49b3-8806-881f3627c808";
 
-// EXPORT THIS TO FIX THE BUILD ERROR
 export const PROCESSING_STEPS = [
   { label: "Evaluating brand viability...", duration: 2000 },
   { label: "Auditing operational readiness...", duration: 2500 },
@@ -68,7 +67,7 @@ export const ASSESSMENT_PHASES: AssessmentPhase[] = [
       },
       {
         id: "A3",
-        question: "USP Description",
+        question: "USP Description: What is your brand's unique selling proposition?",
         type: "text",
         maxPoints: 8,
       }
@@ -83,6 +82,28 @@ export const ASSESSMENT_PHASES: AssessmentPhase[] = [
     description: "Review of documentation and replicability.",
     questions: [
       {
+        id: "B1",
+        question: "Do you have a comprehensive Operations Manual (SOPs) for all key business functions?",
+        type: "select",
+        maxPoints: 10,
+        options: [
+          { label: "No", value: "no", points: 0 },
+          { label: "In Development", value: "partial", points: 5 },
+          { label: "Yes, Completed", value: "yes", points: 10 },
+        ],
+      },
+      {
+        id: "B2",
+        question: "What is the typical time required to open a new unit from the moment a location is secured?",
+        type: "select",
+        maxPoints: 6,
+        options: [
+          { label: "More than 6 months", value: "gt6", points: 2 },
+          { label: "3–6 months", value: "3to6", points: 4 },
+          { label: "Less than 3 months", value: "lt3", points: 6 },
+        ],
+      },
+      {
         id: "B5",
         question: "Are your Point-of-Sale (POS) and inventory systems easily transferable/replicable across multiple locations?",
         type: "select",
@@ -91,7 +112,7 @@ export const ASSESSMENT_PHASES: AssessmentPhase[] = [
           { label: "No", value: "no", points: 0 },
           { label: "With Minor Adjustments", value: "minor", points: 3 },
           { label: "Yes", value: "yes", points: 6 },
-          { label: "NOT APPLICABLE (SINGLE UNIT)", value: "na", points: 5 }, // Added N/A
+          { label: "NOT APPLICABLE (SINGLE UNIT)", value: "na", points: 5 },
         ],
       }
     ],
@@ -113,7 +134,18 @@ export const ASSESSMENT_PHASES: AssessmentPhase[] = [
           { label: "Less than 10%", value: "lt10", points: 2 },
           { label: "10%–19%", value: "10to19", points: 5 },
           { label: "20% or more", value: "gte20", points: 8 },
-          { label: "NOT APPLICABLE (SINGLE UNIT)", value: "na", points: 7 }, // Added N/A
+          { label: "NOT APPLICABLE (SINGLE UNIT)", value: "na", points: 7 },
+        ],
+      },
+      {
+        id: "C2",
+        question: "How much initial capital (AED) is typically required to open and operate a new unit before it becomes profitable?",
+        type: "select",
+        maxPoints: 7,
+        options: [
+          { label: "More than AED 1M", value: "gt1m", points: 3 },
+          { label: "AED 500K – 1M", value: "500kto1m", points: 5 },
+          { label: "Less than AED 500K", value: "lt500k", points: 7 },
         ],
       },
       {
@@ -125,7 +157,18 @@ export const ASSESSMENT_PHASES: AssessmentPhase[] = [
           { label: "More than 12 months", value: "gt12", points: 2 },
           { label: "6–12 months", value: "6to12", points: 5 },
           { label: "Less than 6 months", value: "lt6", points: 7 },
-          { label: "NOT APPLICABLE (SINGLE UNIT)", value: "na", points: 6 }, // Added N/A
+          { label: "NOT APPLICABLE (SINGLE UNIT)", value: "na", points: 6 },
+        ],
+      },
+      {
+        id: "C4",
+        question: "Do you have the necessary cash reserves/capital to fund the franchise development process (legal fees, documentation, marketing)?",
+        type: "select",
+        maxPoints: 8,
+        options: [
+          { label: "No", value: "no", points: 0 },
+          { label: "Partially", value: "partial", points: 4 },
+          { label: "Yes", value: "yes", points: 8 },
         ],
       }
     ],
