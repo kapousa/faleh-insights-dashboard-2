@@ -2,115 +2,187 @@
 
 const WEBHOOK_URL = "/api-n8n/webhook/9546ae5f-93cc-49b3-8806-881f3627c808";
 
-export type AssessmentAnswers = Record<string, string>;
-
-export const ASSESSMENT_PHASES = [
-  {
-    id: "brand",
-    title: "Brand & Concept",
-    questions: [
-      {
-        id: "q_brand_1",
-        question: "Does your brand have a clear, documented Unique Selling Proposition (USP)?",
-        type: "select",
-        options: [
-          { label: "NO", value: "low" },
-          { label: "PARTIALLY", value: "mid" },
-          { label: "YES", value: "high" }
-        ]
-      }
-    ]
-  },
-  {
-    id: "operations",
-    title: "Operations",
-    questions: [
-      {
-        id: "q_ops_pos",
-        question: "Are your Point-of-Sale (POS) and inventory systems easily transferable/replicable across multiple locations?",
-        type: "select",
-        options: [
-          { label: "NO", value: "low" },
-          { label: "WITH MINOR ADJUSTMENTS", value: "mid" },
-          { label: "YES", value: "high" },
-          { label: "NOT APPLICABLE (ONLY ONE UNIT)", value: "na" }
-        ]
-      }
-    ]
-  },
-  {
-    id: "financial",
-    title: "Financial Model",
-    questions: [
-      {
-        id: "q_fin_1",
-        question: "What is the average Net Profit Margin of your best-performing unit(s) over the last 12 months?",
-        type: "select",
-        options: [
-          { label: "LESS THAN 10%", value: "low" },
-          { label: "10%-19%", value: "mid" },
-          { label: "20% OR MORE", value: "high" },
-          { label: "NOT APPLICABLE (SINGLE UNIT)", value: "na" }
-        ]
-      },
-      {
-        id: "q_fin_2",
-        question: "How long does it typically take a new unit to reach break-even (in months)?",
-        type: "select",
-        options: [
-          { label: "MORE THAN 12 MONTHS", value: "low" },
-          { label: "6-12 MONTHS", value: "mid" },
-          { label: "LESS THAN 6 MONTHS", value: "high" },
-          { label: "NOT APPLICABLE (SINGLE UNIT)", value: "na" }
-        ]
-      }
-    ]
-  }
+// EXPORT THIS TO FIX THE BUILD ERROR
+export const PROCESSING_STEPS = [
+  { label: "Evaluating brand viability...", duration: 2000 },
+  { label: "Auditing operational readiness...", duration: 2500 },
+  { label: "Analyzing financial performance...", duration: 2000 },
+  { label: "Checking regulatory compliance...", duration: 1500 },
+  { label: "Generating your readiness report...", duration: 2000 },
 ];
 
-export const calculateScore = (answers: AssessmentAnswers) => {
-  const getWeight = (val: string) => {
-    if (val === "high") return 100;
-    if (val === "mid") return 70;
-    if (val === "na") return 85; // Neutral-high weight for N/A options
-    return 30;
-  };
+export interface AssessmentOption {
+  label: string;
+  value: string;
+  points: number;
+}
 
-  const sections = {
-    brand: ["q_brand_1"],
-    ops: ["q_ops_pos"],
-    fin: ["q_fin_1", "q_fin_2"]
-  };
+export interface AssessmentQuestion {
+  id: string;
+  question: string;
+  type: "select" | "text" | "number";
+  options?: AssessmentOption[];
+  maxPoints: number;
+}
 
-  const calculateSection = (ids: string[]) => {
-    const scores = ids.map(id => getWeight(answers[id] || "low"));
-    return Math.round(scores.reduce((a, b) => a + b, 0) / ids.length);
-  };
+export interface AssessmentPhase {
+  id: string;
+  title: string;
+  subtitle: string;
+  icon: string;
+  weight: number;
+  questions: AssessmentQuestion[];
+  description: string;
+}
 
-  const brandScore = calculateSection(sections.brand);
-  const opsScore = calculateSection(sections.ops);
-  const finScore = calculateSection(sections.fin);
-  const totalScore = Math.round((brandScore + opsScore + finScore) / 3);
+export const ASSESSMENT_PHASES: AssessmentPhase[] = [
+  {
+    id: "A",
+    title: "Brand Power",
+    subtitle: "Concept & Brand Viability",
+    icon: "🏷️",
+    weight: 30,
+    description: "Evaluates brand market presence and USP.",
+    questions: [
+      {
+        id: "A1",
+        question: "Operating Years",
+        type: "select",
+        maxPoints: 5,
+        options: [
+          { label: "Less than 2 years", value: "lt2", points: 1 },
+          { label: "2–5 years", value: "2to5", points: 3 },
+          { label: "More than 5 years", value: "gt5", points: 5 },
+        ],
+      },
+      {
+        id: "A2",
+        question: "Units",
+        type: "select",
+        maxPoints: 5,
+        options: [
+          { label: "1 unit", value: "1", points: 1 },
+          { label: "2–3 units", value: "2to3", points: 3 },
+          { label: "4 or more units", value: "4plus", points: 5 },
+        ],
+      },
+      {
+        id: "A3",
+        question: "USP Description",
+        type: "text",
+        maxPoints: 8,
+      }
+    ],
+  },
+  {
+    id: "B",
+    title: "Systems & Operations",
+    subtitle: "Operational Readiness",
+    icon: "⚙️",
+    weight: 40,
+    description: "Review of documentation and replicability.",
+    questions: [
+      {
+        id: "B5",
+        question: "Are your Point-of-Sale (POS) and inventory systems easily transferable/replicable across multiple locations?",
+        type: "select",
+        maxPoints: 6,
+        options: [
+          { label: "No", value: "no", points: 0 },
+          { label: "With Minor Adjustments", value: "minor", points: 3 },
+          { label: "Yes", value: "yes", points: 6 },
+          { label: "NOT APPLICABLE (SINGLE UNIT)", value: "na", points: 5 }, // Added N/A
+        ],
+      }
+    ],
+  },
+  {
+    id: "C",
+    title: "Financial Health",
+    subtitle: "Financial Performance",
+    icon: "💰",
+    weight: 30,
+    description: "Validation of profit margins and ROI.",
+    questions: [
+      {
+        id: "C1",
+        question: "What is the average Net Profit Margin of your best-performing unit(s) over the last 12 months?",
+        type: "select",
+        maxPoints: 8,
+        options: [
+          { label: "Less than 10%", value: "lt10", points: 2 },
+          { label: "10%–19%", value: "10to19", points: 5 },
+          { label: "20% or more", value: "gte20", points: 8 },
+          { label: "NOT APPLICABLE (SINGLE UNIT)", value: "na", points: 7 }, // Added N/A
+        ],
+      },
+      {
+        id: "C3",
+        question: "How long does it typically take a new unit to reach break-even (in months)?",
+        type: "select",
+        maxPoints: 7,
+        options: [
+          { label: "More than 12 months", value: "gt12", points: 2 },
+          { label: "6–12 months", value: "6to12", points: 5 },
+          { label: "Less than 6 months", value: "lt6", points: 7 },
+          { label: "NOT APPLICABLE (SINGLE UNIT)", value: "na", points: 6 }, // Added N/A
+        ],
+      }
+    ],
+  },
+];
 
-  let category = { label: "Bronze", color: "text-orange-500" };
-  if (totalScore >= 80) category = { label: "Platinum", color: "text-blue-500" };
-  else if (totalScore >= 60) category = { label: "Gold", color: "text-yellow-500" };
+export interface AssessmentAnswers {
+  [questionId: string]: string;
+}
 
-  return { totalScore, category, brandScore, opsScore, finScore };
-};
+export interface ScoreResult {
+  totalScore: number;
+  phaseScores: { phaseId: string; title: string; score: number; maxScore: number; percentage: number }[];
+  category: any;
+}
 
-export async function submitAssessment(data: any) {
-  try {
-    const response = await fetch(WEBHOOK_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
+export function calculateScore(answers: AssessmentAnswers): ScoreResult {
+  const phaseScores = ASSESSMENT_PHASES.map((phase) => {
+    let earned = 0;
+    let max = 0;
+    phase.questions.forEach((q) => {
+      max += q.maxPoints;
+      if (q.type === "select" && answers[q.id]) {
+        const option = q.options?.find((o) => o.value === answers[q.id]);
+        if (option) earned += option.points;
+      } else if (q.type === "text" && answers[q.id]?.trim()) {
+        const len = answers[q.id].trim().length;
+        if (len > 40) earned += q.maxPoints;
+        else if (len > 10) earned += Math.round(q.maxPoints * 0.5);
+      }
     });
+    return {
+      phaseId: phase.id,
+      title: phase.title,
+      score: earned,
+      maxScore: max,
+      percentage: max > 0 ? Math.round((earned / max) * 100) : 0,
+    };
+  });
 
-    if (!response.ok) throw new Error(`Server error: ${response.status}`);
-    return await response.json();
-  } catch (error) {
-    console.error("Submission Error:", error);
-    return { success: true, mocked: true };
-  }
+  const totalScore = Math.round(
+    phaseScores.reduce((sum, ps) => {
+      const phase = ASSESSMENT_PHASES.find((p) => p.id === ps.phaseId)!;
+      return sum + (ps.percentage * phase.weight) / 100;
+    }, 0)
+  );
+
+  const category = totalScore >= 80 ? { label: "Ready to Franchise" } : { label: "Improvement Needed" };
+
+  return { totalScore, phaseScores, category };
+}
+
+export async function submitAssessment(data: any): Promise<any> {
+  const response = await fetch(WEBHOOK_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  return await response.json();
 }
