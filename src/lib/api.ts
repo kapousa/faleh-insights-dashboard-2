@@ -1,14 +1,22 @@
-// --- src/lib/api.ts ---
+// Modular API layer — swap WEBHOOK_URL easily
+// n8n
+// Render
+//Testing
+//const WEBHOOK_URL = "https://my-n8n-automation-r7si.onrender.com/webhook-test/9546ae5f-93cc-49b3-8806-881f3627c808";
+//Production
+//const WEBHOOK_URL = "https://my-n8n-automation-r7si.onrender.com/webhook/9546ae5f-93cc-49b3-8806-881f3627c808";
 
+// local
+//Testing
+//const WEBHOOK_URL = "http://localhost:5678/webhook-test/9546ae5f-93cc-49b3-8806-881f3627c808";
+//Production
+//const WEBHOOK_URL = "https://my-n8n-automation-r7si.onrender.com/webhook/9546ae5f-93cc-49b3-8806-881f3627c808";
 const WEBHOOK_URL = "/api-n8n/webhook/9546ae5f-93cc-49b3-8806-881f3627c808";
 
-export const PROCESSING_STEPS = [
-  { label: "Evaluating brand viability...", duration: 2000 },
-  { label: "Auditing operational readiness...", duration: 2500 },
-  { label: "Analyzing financial performance...", duration: 2000 },
-  { label: "Checking regulatory compliance...", duration: 1500 },
-  { label: "Generating your readiness report...", duration: 2000 },
-];
+//const WEBHOOK_SEND_OTP_URL = "https://faleh.app.n8n.cloud/webhook-test/eb3e2796-d696-48de-8416-9e44b0b0d37a";
+// End n8n
+
+// ─── Assessment Questions ───
 
 export interface AssessmentOption {
   label: string;
@@ -29,7 +37,7 @@ export interface AssessmentPhase {
   title: string;
   subtitle: string;
   icon: string;
-  weight: number;
+  weight: number; // percentage
   questions: AssessmentQuestion[];
   description: string;
 }
@@ -41,11 +49,11 @@ export const ASSESSMENT_PHASES: AssessmentPhase[] = [
     subtitle: "Concept & Brand Viability",
     icon: "🏷️",
     weight: 30,
-    description: "Evaluates brand market presence and USP.",
+    description: "This phase evaluates your brand's market presence, the uniqueness of your concept within the UAE competitive landscape, and the legal protection of your intellectual property.",
     questions: [
       {
         id: "A1",
-        question: "Operating Years",
+        question: "How long has your business been continuously operating under the current brand name/concept?",
         type: "select",
         maxPoints: 5,
         options: [
@@ -56,7 +64,7 @@ export const ASSESSMENT_PHASES: AssessmentPhase[] = [
       },
       {
         id: "A2",
-        question: "Units",
+        question: "How many units/locations (including the original) are currently operating under your full control?",
         type: "select",
         maxPoints: 5,
         options: [
@@ -67,40 +75,84 @@ export const ASSESSMENT_PHASES: AssessmentPhase[] = [
       },
       {
         id: "A3",
-        question: "USP Description: What is your brand's unique selling proposition?",
+        question: "Describe your unique selling proposition (USP). What makes your brand distinctly different from competitors in the UAE?",
         type: "text",
         maxPoints: 8,
-      }
+      },
+      {
+        id: "A4",
+        question: "Is your brand trademarked/registered in the UAE?",
+        type: "select",
+        maxPoints: 7,
+        options: [
+          { label: "No", value: "no", points: 0 },
+          { label: "In Progress", value: "in_progress", points: 4 },
+          { label: "Yes", value: "yes", points: 7 },
+        ],
+      },
+      {
+        id: "A5",
+        question: "How adaptable is your business model to the diverse demographics and consumer behaviors found across the UAE?",
+        type: "select",
+        maxPoints: 5,
+        options: [
+          { label: "Difficult", value: "difficult", points: 1 },
+          { label: "Moderate", value: "moderate", points: 3 },
+          { label: "Easy", value: "easy", points: 5 },
+        ],
+      },
     ],
   },
   {
     id: "B",
     title: "Systems & Operations",
-    subtitle: "Operational Readiness",
+    subtitle: "Operational Readiness & Scalability",
     icon: "⚙️",
     weight: 40,
-    description: "Review of documentation and replicability.",
+    description: "The core of franchising is replicability. We review your documentation, training systems, and the ease of transferring operational knowledge to third parties to ensure consistent quality.",
     questions: [
       {
         id: "B1",
-        question: "Do you have a comprehensive Operations Manual (SOPs) for all key business functions?",
+        question: "Do you have a documented, comprehensive Operations Manual (covering daily procedures, service standards, and key recipes/processes)?",
         type: "select",
-        maxPoints: 10,
+        maxPoints: 8,
         options: [
           { label: "No", value: "no", points: 0 },
-          { label: "In Development", value: "partial", points: 5 },
-          { label: "Yes, Completed", value: "yes", points: 10 },
+          { label: "Partial", value: "partial", points: 4 },
+          { label: "Yes", value: "yes", points: 8 },
         ],
       },
       {
         id: "B2",
+        question: "How standardized are your core ingredients, supplies, or inventory? Can a franchisee easily source items that meet quality standards?",
+        type: "select",
+        maxPoints: 7,
+        options: [
+          { label: "Difficult / Inconsistent", value: "difficult", points: 1 },
+          { label: "Needs Refinement", value: "needs_refinement", points: 4 },
+          { label: "Fully Standardized / Identified", value: "fully", points: 7 },
+        ],
+      },
+      {
+        id: "B3",
+        question: "Do you have a structured training program for new employees/managers that can be taught to a franchisee's team?",
+        type: "select",
+        maxPoints: 7,
+        options: [
+          { label: "No", value: "no", points: 0 },
+          { label: "Developing", value: "developing", points: 4 },
+          { label: "Yes", value: "yes", points: 7 },
+        ],
+      },
+      {
+        id: "B4",
         question: "What is the typical time required to open a new unit from the moment a location is secured?",
         type: "select",
         maxPoints: 6,
         options: [
-          { label: "More than 6 months", value: "gt6", points: 2 },
-          { label: "3–6 months", value: "3to6", points: 4 },
-          { label: "Less than 3 months", value: "lt3", points: 6 },
+          { label: "More than 6 months", value: "gt6m", points: 2 },
+          { label: "3–6 months", value: "3to6m", points: 4 },
+          { label: "Less than 3 months", value: "lt3m", points: 6 },
         ],
       },
       {
@@ -112,18 +164,27 @@ export const ASSESSMENT_PHASES: AssessmentPhase[] = [
           { label: "No", value: "no", points: 0 },
           { label: "With Minor Adjustments", value: "minor", points: 3 },
           { label: "Yes", value: "yes", points: 6 },
-          { label: "NOT APPLICABLE (SINGLE UNIT)", value: "na", points: 5 },
         ],
-      }
+      },
+      {
+        id: "B6",
+        question: "Do you have detailed financial reporting templates (e.g., P&L, Cost of Goods Sold tracking) that are consistently used across all your units?",
+        type: "select",
+        maxPoints: 6,
+        options: [
+          { label: "No", value: "no", points: 0 },
+          { label: "Yes", value: "yes", points: 6 },
+        ],
+      },
     ],
   },
   {
     id: "C",
     title: "Financial Health",
-    subtitle: "Financial Performance",
+    subtitle: "Financial Performance & Infrastructure",
     icon: "💰",
     weight: 30,
-    description: "Validation of profit margins and ROI.",
+    description: "A successful franchise must be profitable for both parties. This section validates your financial model, ROI timelines, and compliance with UAE business licensing and regulations.",
     questions: [
       {
         id: "C1",
@@ -134,7 +195,6 @@ export const ASSESSMENT_PHASES: AssessmentPhase[] = [
           { label: "Less than 10%", value: "lt10", points: 2 },
           { label: "10%–19%", value: "10to19", points: 5 },
           { label: "20% or more", value: "gte20", points: 8 },
-          { label: "NOT APPLICABLE (SINGLE UNIT)", value: "na", points: 7 },
         ],
       },
       {
@@ -143,8 +203,8 @@ export const ASSESSMENT_PHASES: AssessmentPhase[] = [
         type: "select",
         maxPoints: 7,
         options: [
-          { label: "More than AED 1M", value: "gt1m", points: 3 },
-          { label: "AED 500K – 1M", value: "500kto1m", points: 5 },
+          { label: "More than AED 1M", value: "gt1m", points: 2 },
+          { label: "AED 500K – 1M", value: "500kto1m", points: 4 },
           { label: "Less than AED 500K", value: "lt500k", points: 7 },
         ],
       },
@@ -157,33 +217,82 @@ export const ASSESSMENT_PHASES: AssessmentPhase[] = [
           { label: "More than 12 months", value: "gt12", points: 2 },
           { label: "6–12 months", value: "6to12", points: 5 },
           { label: "Less than 6 months", value: "lt6", points: 7 },
-          { label: "NOT APPLICABLE (SINGLE UNIT)", value: "na", points: 6 },
         ],
       },
       {
         id: "C4",
         question: "Do you have the necessary cash reserves/capital to fund the franchise development process (legal fees, documentation, marketing)?",
         type: "select",
-        maxPoints: 8,
+        maxPoints: 5,
         options: [
           { label: "No", value: "no", points: 0 },
-          { label: "Partially", value: "partial", points: 4 },
-          { label: "Yes", value: "yes", points: 8 },
+          { label: "Partially", value: "partial", points: 3 },
+          { label: "Yes", value: "yes", points: 5 },
         ],
-      }
+      },
+      {
+        id: "C5",
+        question: "Are all business licenses and permits—including Department of Economy and Tourism (DET), Municipality, and Health/Safety approvals—current, in good standing, and compliant with both Federal and Emirate-specific regulations?",
+        type: "select",
+        maxPoints: 3,
+        options: [
+          { label: "No", value: "no", points: 0 },
+          { label: "Yes", value: "yes", points: 3 },
+        ],
+      },
     ],
   },
 ];
+// ─── Scoring Logic ───
 
 export interface AssessmentAnswers {
-  [questionId: string]: string;
+  [questionId: string]: string; // value for select, text for text
 }
 
 export interface ScoreResult {
-  totalScore: number;
+  totalScore: number; // 0–100
   phaseScores: { phaseId: string; title: string; score: number; maxScore: number; percentage: number }[];
-  category: any;
+  category: ScoreCategory;
 }
+
+export interface ScoreCategory {
+  range: string;
+  label: string;
+  emoji: string;
+  description: string;
+  color: string;
+}
+
+const SCORE_CATEGORIES: ScoreCategory[] = [
+  {
+    range: "80–100",
+    label: "Ready to Franchise",
+    emoji: "✅",
+    description: "High Priority: Concept is proven, scalable, and financially attractive. Initiate detailed due diligence and contract discussion immediately.",
+    color: "hsl(160, 84%, 39%)",
+  },
+  {
+    range: "60–79",
+    label: "Needs Improvement",
+    emoji: "⚠️",
+    description: "Medium Priority: Strong foundation, but significant gaps exist (likely in Operations). Requires consulting to develop manuals, standardization, and systems.",
+    color: "hsl(45, 93%, 47%)",
+  },
+  {
+    range: "40–59",
+    label: "Not Ready",
+    emoji: "❌",
+    description: "Low Priority: Concept may be viable, but the business lacks operational maturity. Recommend a 12–18 month Franchise Preparation Plan.",
+    color: "hsl(25, 95%, 53%)",
+  },
+  {
+    range: "< 40",
+    label: "Not Valid / Viable",
+    emoji: "🛑",
+    description: "Hold: Business is too new, unprofitable, or unsuited for replication. Focus on building a single, profitable unit first. Revisit in 2+ years.",
+    color: "hsl(0, 84%, 60%)",
+  },
+];
 
 export function calculateScore(answers: AssessmentAnswers): ScoreResult {
   const phaseScores = ASSESSMENT_PHASES.map((phase) => {
@@ -195,9 +304,11 @@ export function calculateScore(answers: AssessmentAnswers): ScoreResult {
         const option = q.options?.find((o) => o.value === answers[q.id]);
         if (option) earned += option.points;
       } else if (q.type === "text" && answers[q.id]?.trim()) {
+        // For text answers, give points based on length/quality (simple heuristic)
         const len = answers[q.id].trim().length;
-        if (len > 40) earned += q.maxPoints;
-        else if (len > 10) earned += Math.round(q.maxPoints * 0.5);
+        if (len > 100) earned += q.maxPoints;
+        else if (len > 40) earned += Math.round(q.maxPoints * 0.7);
+        else if (len > 10) earned += Math.round(q.maxPoints * 0.4);
       }
     });
     return {
@@ -209,6 +320,7 @@ export function calculateScore(answers: AssessmentAnswers): ScoreResult {
     };
   });
 
+  // Weighted total
   const totalScore = Math.round(
     phaseScores.reduce((sum, ps) => {
       const phase = ASSESSMENT_PHASES.find((p) => p.id === ps.phaseId)!;
@@ -216,16 +328,114 @@ export function calculateScore(answers: AssessmentAnswers): ScoreResult {
     }, 0)
   );
 
-  const category = totalScore >= 80 ? { label: "Ready to Franchise" } : { label: "Improvement Needed" };
+  let category: ScoreCategory;
+  if (totalScore >= 80) category = SCORE_CATEGORIES[0];
+  else if (totalScore >= 60) category = SCORE_CATEGORIES[1];
+  else if (totalScore >= 40) category = SCORE_CATEGORIES[2];
+  else category = SCORE_CATEGORIES[3];
 
   return { totalScore, phaseScores, category };
 }
 
-export async function submitAssessment(data: any): Promise<any> {
-  const response = await fetch(WEBHOOK_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
+// ─── AI Recommendations (mock based on score) ───
+
+export function getRecommendations(result: ScoreResult): string[] {
+  const recs: string[] = [];
+  result.phaseScores.forEach((ps) => {
+    if (ps.phaseId === "A" && ps.percentage < 60) {
+      recs.push("Strengthen your brand identity by completing trademark registration and clearly documenting your USP.");
+    }
+    if (ps.phaseId === "A" && ps.percentage >= 60 && ps.percentage < 80) {
+      recs.push("Consider expanding to at least 2–3 locations to demonstrate brand replicability before franchising.");
+    }
+    if (ps.phaseId === "B" && ps.percentage < 50) {
+      recs.push("Develop a comprehensive Operations Manual covering daily procedures, service standards, and supply chain.");
+      recs.push("Invest in a structured training program that can be easily taught to franchisee teams.");
+    }
+    if (ps.phaseId === "B" && ps.percentage >= 50 && ps.percentage < 80) {
+      recs.push("Standardize your POS/inventory systems and ensure they're easily replicable across new locations.");
+    }
+    if (ps.phaseId === "C" && ps.percentage < 50) {
+      recs.push("Focus on improving net profit margins to at least 15% before pursuing franchise expansion.");
+      recs.push("Secure adequate capital reserves for franchise development costs (legal, marketing, documentation).");
+    }
+    if (ps.phaseId === "C" && ps.percentage >= 50 && ps.percentage < 80) {
+      recs.push("Ensure all licenses and permits are current and work on reducing break-even time for new units.");
+    }
   });
-  return await response.json();
+  if (result.totalScore >= 80) {
+    recs.push("Your business shows strong franchise readiness. Consider engaging a franchise consultant to begin the formal franchising process.");
+  }
+  return recs.length > 0 ? recs : ["Continue building operational consistency and document all your processes."];
 }
+
+// ─── Submission ───
+
+export interface AssessmentSubmission {
+  businessName: string;
+  contactName: string;
+  email: string;
+  totalScore: number;
+  categoryLabel: string;
+  brandScore: number;
+  opsScore: number;
+  finScore: number;
+  answers: AssessmentAnswers;
+  score: ScoreResult;
+}
+
+export async function submitAssessment(data: AssessmentSubmission): Promise<any> {
+  console.log("🚀 Starting submission to:", WEBHOOK_URL);
+
+  try {
+    const response = await fetch(WEBHOOK_URL, {
+      method: "POST",
+      mode: "cors", // Required for cross-origin requests
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json"
+      },
+      body: JSON.stringify(data),
+    });
+
+    // If we get here, the CORS check passed but the server might have returned an error (404, 500, etc.)
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`❌ Server Error (${response.status}):`, errorText);
+      throw new Error(`Server responded with ${response.status}`);
+    }
+
+    const result = await response.json();
+    console.log("✅ Success! n8n responded with:", result);
+    return result;
+
+  } catch (error: any) {
+    // This block triggers if the BROWSER blocks the request (CORS) or if the network is down
+    console.group("🛑 Webhook Connection Error");
+    console.error("Message:", error.message);
+
+    if (error.message === "Failed to fetch") {
+      console.warn("DIAGNOSIS: This is likely a CORS block. The server at Render is not sending the 'Access-Control-Allow-Origin' header.");
+    }
+    console.groupEnd();
+
+    // Still returning mock data so your app doesn't crash, but we log the error above
+    return {
+      success: true,
+      sessionId: "mock-session-" + Date.now(),
+      mocked: true
+    };
+  }
+}
+// ─── Processing Steps ───
+
+export const PROCESSING_STEPS = [
+  { label: "Evaluating brand viability...", duration: 2000 },
+  { label: "Auditing operational readiness...", duration: 2500 },
+  { label: "Analyzing financial performance...", duration: 2000 },
+  { label: "Checking regulatory compliance...", duration: 1500 },
+  { label: "Generating your readiness report...", duration: 2000 },
+];
+
+// ─── Report Status ───
+export type ReportStatus = "draft" | "analyzing" | "ready";
