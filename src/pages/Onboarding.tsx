@@ -33,11 +33,9 @@ const Onboarding = () => {
 
     const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-    // Scroll to top when phase changes
+    // Ensure we scroll to top when moving between phases
     useEffect(() => {
-        if (scrollContainerRef.current) {
-            scrollContainerRef.current.scrollTo({ top: 0, behavior: "smooth" });
-        }
+        window.scrollTo({ top: 0, behavior: "smooth" });
     }, [phaseIndex]);
 
     useEffect(() => {
@@ -52,12 +50,11 @@ const Onboarding = () => {
     const totalPhases = ASSESSMENT_PHASES.length;
     const currentPhase = ASSESSMENT_PHASES[phaseIndex];
 
-    // canNext handles validation for both initial info and assessment questions
     const canNext = phaseIndex === -1
         ? businessName.length >= 2 && contactName.length >= 2 && email.includes("@")
         : currentPhase?.questions.every((q) => {
             const answer = answers[q.id];
-            // 'na' values are truthy and satisfy the !!answer check
+            // Fixes validation for 'na' selection
             if (q.type === "select") return !!answer;
             if (q.type === "text") return !!answer && answer.length > 10;
             return false;
@@ -73,7 +70,7 @@ const Onboarding = () => {
             email,
             totalScore: scoreResult.totalScore,
             categoryLabel: scoreResult.category.label,
-            // Mapping scores to match the n8n JavaScript node expectations
+            // Extracting scores correctly for n8n processing
             brandScore: scoreResult.phaseScores.find(p => p.phaseId === 'A')?.percentage || 0,
             opsScore: scoreResult.phaseScores.find(p => p.phaseId === 'B')?.percentage || 0,
             finScore: scoreResult.phaseScores.find(p => p.phaseId === 'C')?.percentage || 0,
@@ -83,11 +80,9 @@ const Onboarding = () => {
 
         try {
             await submitAssessment(submissionData);
-            // Navigate to processing to show the steps exported from api.ts
             navigate("/processing", { state: { score: scoreResult } });
         } catch (error) {
             console.error("Submission failed", error);
-            // Fallback for demo purposes
             navigate("/dashboard", { state: { score: scoreResult } });
         } finally {
             setLoading(false);
@@ -96,7 +91,8 @@ const Onboarding = () => {
 
     return (
         <div className="min-h-screen bg-white flex flex-col font-sans selection:bg-[#5c21ff]/10">
-            <div className="flex-1 max-w-4xl mx-auto w-full px-6 py-12 md:py-20" ref={scrollContainerRef}>
+            {/* Main Content Area */}
+            <div className="flex-1 max-w-4xl mx-auto w-full px-6 py-12 md:py-20">
                 <AnimatePresence mode="wait">
                     {phaseIndex === -1 ? (
                         <motion.div
@@ -108,50 +104,39 @@ const Onboarding = () => {
                         >
                             <div className="space-y-4">
                                 <div className="inline-block px-4 py-1.5 bg-[#5c21ff]/5 text-[#5c21ff] text-xs font-black uppercase tracking-widest italic border border-[#5c21ff]/10">
-                                    Strategic Audit 2024
+                                    Strategic Audit 2.0
                                 </div>
-                                <h1 className="text-5xl md:text-7xl font-black text-[#0a1d37] tracking-tighter italic uppercase leading-[0.9]">
+                                <h1 className="text-5xl md:text-7xl font-black text-[#0a1d37] tracking-tighter italic uppercase leading-[0.85]">
                                     Franchise <br />Readiness
                                 </h1>
                             </div>
 
                             <div className="grid gap-8">
                                 <div className="space-y-2">
-                                    <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Business Identity</Label>
+                                    <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Business Identity</Label>
                                     <div className="relative group">
                                         <Building2 className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300 group-focus-within:text-[#5c21ff] transition-colors" />
                                         <Input
                                             value={businessName}
                                             onChange={(e) => setBusinessName(e.target.value)}
-                                            className="h-20 pl-16 rounded-none border-2 border-slate-100 focus:border-[#5c21ff] focus:ring-0 text-xl font-bold placeholder:text-slate-200 transition-all"
-                                            placeholder="Trading Name / Entity"
+                                            className="h-20 pl-16 rounded-none border-2 border-slate-100 focus:border-[#5c21ff] focus:ring-0 text-xl font-bold placeholder:text-slate-200"
+                                            placeholder="Trading Name"
                                         />
                                     </div>
                                 </div>
-
                                 <div className="grid md:grid-cols-2 gap-8">
                                     <div className="space-y-2">
-                                        <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Primary Contact</Label>
-                                        <div className="relative group">
-                                            <User className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300 group-focus-within:text-[#5c21ff] transition-colors" />
-                                            <Input
-                                                value={contactName}
-                                                onChange={(e) => setContactName(e.target.value)}
-                                                className="h-20 pl-16 rounded-none border-2 border-slate-100 focus:border-[#5c21ff] focus:ring-0 text-xl font-bold placeholder:text-slate-200 transition-all"
-                                                placeholder="Full Name"
-                                            />
-                                        </div>
+                                        <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Contact Name</Label>
+                                        <Input
+                                            value={contactName}
+                                            onChange={(e) => setContactName(e.target.value)}
+                                            className="h-20 px-8 rounded-none border-2 border-slate-100 focus:border-[#5c21ff] focus:ring-0 text-xl font-bold"
+                                            placeholder="Your Name"
+                                        />
                                     </div>
                                     <div className="space-y-2">
-                                        <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Email Address</Label>
-                                        <div className="relative group">
-                                            <Mail className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300 group-focus-within:text-[#5c21ff] transition-colors" />
-                                            <Input
-                                                value={email}
-                                                readOnly
-                                                className="h-20 pl-16 rounded-none border-2 border-slate-50 bg-slate-50 text-xl font-bold text-slate-400"
-                                            />
-                                        </div>
+                                        <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Verified Email</Label>
+                                        <Input value={email} readOnly className="h-20 px-8 rounded-none border-2 border-slate-50 bg-slate-50 text-xl font-bold text-slate-400" />
                                     </div>
                                 </div>
                             </div>
@@ -164,14 +149,12 @@ const Onboarding = () => {
                             exit={{ opacity: 0, x: -20 }}
                             className="space-y-12"
                         >
-                            <div className="flex items-center justify-between border-b-4 border-[#0a1d37] pb-6">
+                            <div className="flex items-end justify-between border-b-8 border-[#0a1d37] pb-6">
                                 <div className="space-y-1">
-                                    <div className="text-[10px] font-black uppercase tracking-[0.3em] text-[#5c21ff]">
-                                        Phase 0{phaseIndex + 1} / 0{totalPhases}
-                                    </div>
-                                    <h2 className="text-4xl font-black text-[#0a1d37] uppercase italic leading-none">{currentPhase.title}</h2>
+                                    <div className="text-[10px] font-black uppercase tracking-[0.3em] text-[#5c21ff]">Phase 0{phaseIndex + 1} / 0{totalPhases}</div>
+                                    <h2 className="text-5xl md:text-6xl font-black text-[#0a1d37] uppercase italic leading-none">{currentPhase.title}</h2>
                                 </div>
-                                <span className="text-6xl">{currentPhase.icon}</span>
+                                <span className="text-6xl hidden md:block opacity-20">{currentPhase.icon}</span>
                             </div>
 
                             <div className="space-y-16">
@@ -204,8 +187,8 @@ const Onboarding = () => {
                                             <Textarea
                                                 value={answers[q.id] || ""}
                                                 onChange={(e) => setAnswer(q.id, e.target.value)}
-                                                className="min-h-[200px] rounded-none border-2 border-slate-100 p-8 text-lg font-medium focus:border-[#5c21ff] focus:ring-0 transition-all"
-                                                placeholder="Provide detailed analysis..."
+                                                className="min-h-[200px] rounded-none border-2 border-slate-100 p-8 text-lg font-medium focus:border-[#5c21ff] focus:ring-0"
+                                                placeholder="Please provide details..."
                                             />
                                         )}
                                     </div>
@@ -215,6 +198,7 @@ const Onboarding = () => {
                     )}
                 </AnimatePresence>
 
+                {/* Fixed Navigation Bottom Bar */}
                 <div className="mt-20 pt-10 border-t-2 border-slate-50 flex items-center justify-between">
                     <Button
                         variant="ghost"
@@ -225,7 +209,7 @@ const Onboarding = () => {
                     </Button>
 
                     <Button
-                        className="h-16 px-12 rounded-none bg-[#0a1d37] text-white font-black uppercase italic tracking-widest hover:bg-[#5c21ff] disabled:opacity-20 transition-all shadow-[8px_8px_0px_rgba(10,29,55,0.1)] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[12px_12px_0px_rgba(92,33,255,0.2)]"
+                        className="h-16 px-12 rounded-none bg-[#0a1d37] text-white font-black uppercase italic tracking-widest hover:bg-[#5c21ff] disabled:opacity-20 transition-all shadow-[8px_8px_0px_rgba(10,29,55,0.1)] active:translate-y-[2px]"
                         onClick={() => phaseIndex < totalPhases - 1 ? setPhaseIndex(phaseIndex + 1) : handleSubmit()}
                         disabled={!canNext || loading}
                     >
