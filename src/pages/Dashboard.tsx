@@ -1,262 +1,188 @@
-import {useState, useEffect, useRef} from "react";
-import {useNavigate} from "react-router-dom";
-import {motion, AnimatePresence} from "framer-motion";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
-    ArrowRight,
+    LayoutDashboard,
+    ChevronLeft,
+    Download,
+    TrendingUp,
+    Sparkles,
+    ShieldCheck,
+    FileText,
     Loader2,
-    Building2,
-    Lightbulb,
-    Target,
-    ShieldCheck
+    RefreshCw
 } from "lucide-react";
-import {Button} from "@/components/ui/button";
-import {Input} from "@/components/ui/input";
-import {Label} from "@/components/ui/label";
-import {Textarea} from "@/components/ui/textarea";
-import {
-    ASSESSMENT_PHASES,
-    calculateScore,
-    submitAssessment,
-    type AssessmentAnswers,
-} from "@/lib/api";
+import { Button } from "@/components/ui/button";
+import { type ScoreResult } from "@/lib/api";
+import CategoryBreakdown from "@/components/CategoryBreakdown";
 
-const Onboarding = () => {
-    const navigate = useNavigate();
-    const [phaseIndex, setPhaseIndex] = useState(-1);
-    const [loading, setLoading] = useState(false);
-    const [businessName, setBusinessName] = useState("");
-    const [contactName, setContactName] = useState("");
-    const [email, setEmail] = useState("");
-    const [answers, setAnswers] = useState<AssessmentAnswers>({});
-
-    const scrollContainerRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-        if (scrollContainerRef.current) {
-            scrollContainerRef.current.scrollTo({top: 0, behavior: "smooth"});
-        }
-    }, [phaseIndex]);
-
-    useEffect(() => {
-        const verifiedEmail = sessionStorage.getItem("faleh_verified_email");
-        if (verifiedEmail) {
-            setEmail(verifiedEmail);
-        }
-    }, []);
-
-    const setAnswer = (qId: string, value: string) =>
-        setAnswers((prev) => ({...prev, [qId]: value}));
-
-    const currentPhase = phaseIndex >= 0 ? ASSESSMENT_PHASES[phaseIndex] : null;
-    const totalPhases = ASSESSMENT_PHASES.length;
-
-    const canNext =
-        phaseIndex === -1
-            ? businessName.trim() && contactName.trim() && email.trim()
-            : currentPhase?.questions.every((q) => {
-                if (q.type === "text") return (answers[q.id]?.trim().length ?? 0) > 0;
-                return !!answers[q.id];
-            });
-
-const handleSubmit = async () => {
-        setLoading(true);
-        try {
-            // 1. Calculate scores
-            const scoreResult = calculateScore(answers);
-            const brandScore = scoreResult.phaseScores.find(p => p.phaseId === "A")?.percentage || 0;
-            const opsScore = scoreResult.phaseScores.find(p => p.phaseId === "B")?.percentage || 0;
-            const finScore = scoreResult.phaseScores.find(p => p.phaseId === "C")?.percentage || 0;
-
-            // 2. Prepare payload exactly as api.ts expects
-            const submissionData = {
-                businessName,
-                contactName,
-                email,
-                totalScore: scoreResult.totalScore,
-                categoryLabel: scoreResult.category.label,
-                brandScore,
-                opsScore,
-                finScore,
-                answers,
-                score: scoreResult // This passes the full ScoreResult object required by api.ts
-            };
-
-            // 3. Submit to n8n
-            const response = await submitAssessment(submissionData);
-
-            // 4. Capture Download Link
-            // We cast to 'any' here just to bypass local type strictness for the n8n response
-            const resData = response as any;
-            const finalLink = resData?.downloadLink || (resData?.data && resData?.data.downloadLink);
-
-            if (finalLink) {
-                localStorage.setItem("pdf_download_url", finalLink);
-            }
-
-            // 5. Local Persistence
-            localStorage.setItem("assessment_results", JSON.stringify(scoreResult));
-            localStorage.setItem("business_name", businessName);
-            localStorage.setItem("user_email", email);
-
-            navigate("/processing");
-
-        } catch (error) {
-            console.error("Submission failed:", error);
-            navigate("/processing");
-        } finally {
-            setLoading(false);
-        }
+const ReadinessGauge = ({ score }: { score: number }) => {
+    const radius = 80;
+    const circumference = Math.PI * radius;
+    const strokeDashoffset = circumference - (score / 100) * circumference;
+    const getColor = (s: number) => {
+        if (s < 40) return "#ef4444";
+        if (s < 70) return "#ffcc00";
+        return "#5c21ff";
     };
 
     return (
-        <div className="min-h-screen bg-[#fcfcfd] flex flex-col md:flex-row overflow-hidden font-sans">
-            {/* Sidebar */}
-            <div className="w-full md:w-[380px] bg-[#0a1d37] p-10 text-white flex flex-col justify-between relative overflow-hidden shrink-0">
-                <div className="absolute top-0 left-0 w-full h-full opacity-5 pointer-events-none"
-                     style={{ backgroundImage: 'radial-gradient(#5c21ff 2px, transparent 2px)', backgroundSize: '30px 30px' }}/>
-
-                <div className="relative z-10">
-                    <button onClick={() => navigate("/")} className="flex items-center gap-3 mb-12 group bg-transparent border-none p-0 text-left cursor-pointer">
-                        <img src="/logo.png" alt="Logo" className="w-10 h-10 object-contain rounded-lg shadow-lg group-hover:scale-110 transition-transform" />
-                        <span className="text-2xl font-black uppercase italic tracking-tighter">Faleh</span>
-                    </button>
-
-                    <div className="space-y-8">
-                        <div>
-                            <h2 className="text-2xl font-black uppercase italic text-[#ffcc00] mb-2 leading-tight">
-                                {phaseIndex === -1 ? "Initialization" : `Phase 0${phaseIndex + 1}`}
-                            </h2>
-                            <p className="text-slate-400 text-sm font-medium">
-                                {phaseIndex === -1 ? "Define your business identity." : currentPhase?.title}
-                            </p>
-                        </div>
-
-                        <div className="space-y-4 pt-4 border-l border-white/10 ml-3 pl-6">
-                            <div className={`relative flex items-center gap-3 ${phaseIndex >= -1 ? "opacity-100" : "opacity-30"}`}>
-                                <div className={`absolute -left-[31px] w-4 h-4 rounded-full border-4 ${phaseIndex >= -1 ? "bg-[#ffcc00] border-[#0a1d37]" : "bg-slate-700 border-[#0a1d37]"}`}/>
-                                <span className="text-[10px] font-black uppercase italic tracking-wider">Info</span>
-                            </div>
-                            {ASSESSMENT_PHASES.map((phase, idx) => (
-                                <div key={idx} className={`relative flex items-center gap-3 ${phaseIndex >= idx ? "opacity-100" : "opacity-30"}`}>
-                                    <div className={`absolute -left-[31px] w-4 h-4 rounded-full border-4 ${phaseIndex >= idx ? "bg-[#ffcc00] border-[#0a1d37]" : "bg-slate-700 border-[#0a1d37]"}`}/>
-                                    <span className="text-[10px] font-black uppercase italic tracking-wider">{phase.title}</span>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-
-                <div className="relative z-10 bg-white/5 p-6 border-l-4 border-[#ffcc00] backdrop-blur-sm">
-                    <div className="flex items-center gap-2 mb-2 text-[#ffcc00]">
-                        <Lightbulb size={16}/>
-                        <span className="text-[10px] font-black uppercase tracking-widest">System Tip</span>
-                    </div>
-                    <p className="text-[11px] text-slate-300 italic">
-                        {phaseIndex === -1 ? "Accurate details ensure report validity." : "Input quality affects AI precision."}
-                    </p>
+        <div className="flex flex-col items-center justify-center p-6 bg-white border border-slate-100 shadow-sm w-full">
+            <div className="relative w-64 h-32 overflow-hidden">
+                <svg className="w-64 h-64 -rotate-180 transform" viewBox="0 0 200 200">
+                    <circle cx="100" cy="100" r={radius} stroke="#f1f5f9" strokeWidth="20" fill="transparent" />
+                    <circle
+                        cx="100" cy="100" r={radius} stroke={getColor(score)} strokeWidth="20" fill="transparent"
+                        strokeDasharray={circumference} strokeDashoffset={strokeDashoffset}
+                        className="transition-all duration-1000 ease-out"
+                    />
+                </svg>
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 translate-y-2 text-center">
+                    <span className="text-4xl font-black italic text-[#0a1d37]">{score}%</span>
+                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter leading-none">Readiness</p>
                 </div>
             </div>
-
-            {/* Main Content Area */}
-            <div ref={scrollContainerRef} className="flex-1 flex flex-col relative overflow-y-auto bg-white scroll-smooth">
-                <div className="max-w-2xl w-full mx-auto px-8 py-16">
-                    <div className="mb-12 flex items-center justify-between border-b border-slate-50 pb-8">
-                        <div>
-                            <h1 className="text-3xl font-black uppercase italic tracking-tighter text-[#0a1d37]">Assessment</h1>
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Franchise Audit</p>
-                        </div>
-                        <div className="text-right">
-                            <div className="text-[10px] font-black text-[#5c21ff] uppercase mb-1">Completion</div>
-                            <div className="w-32 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                <motion.div animate={{width: `${((phaseIndex + 2) / (totalPhases + 1)) * 100}%`}} className="h-full bg-[#5c21ff]" />
-                            </div>
-                        </div>
-                    </div>
-
-                    <AnimatePresence mode="wait">
-                        {phaseIndex === -1 ? (
-                            <motion.div key="intro" initial={{opacity: 0, y: 20}} animate={{opacity: 1, y: 0}} exit={{opacity: 0, y: -20}} className="space-y-10">
-                                <div className="space-y-2">
-                                    <div className="inline-flex items-center gap-2 text-[#5c21ff] mb-2">
-                                        <Building2 size={18}/><span className="text-xs font-black uppercase tracking-widest">Identity</span>
-                                    </div>
-                                    <h2 className="text-4xl font-black uppercase italic text-[#0a1d37]">Who are we auditing?</h2>
-                                </div>
-
-                                <div className="grid gap-8">
-                                    <div className="space-y-3">
-                                        <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Business Name</Label>
-                                        <Input className="h-16 rounded-none border-2 border-slate-100 bg-slate-50/30 text-lg font-bold" value={businessName} onChange={(e) => setBusinessName(e.target.value)} />
-                                    </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div className="space-y-3">
-                                            <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Contact</Label>
-                                            <Input className="h-16 rounded-none border-2 border-slate-100 bg-slate-50/30 font-bold" value={contactName} onChange={(e) => setContactName(e.target.value)} />
-                                        </div>
-                                        <div className="space-y-3">
-                                            <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Email</Label>
-                                            <Input className="h-16 rounded-none border-2 border-slate-100 bg-slate-50/30 font-bold" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-                                        </div>
-                                    </div>
-                                </div>
-                            </motion.div>
-                        ) : (
-                            <motion.div key={currentPhase?.id} initial={{opacity: 0, y: 20}} animate={{opacity: 1, y: 0}} exit={{opacity: 0, y: -20}} className="space-y-10">
-                                <div className="p-8 bg-[#0a1d37] text-white relative overflow-hidden group">
-                                    <div className="relative z-10 space-y-2">
-                                        <div className="flex items-center gap-2 text-[#ffcc00]">
-                                            <Target size={16}/><span className="text-[10px] font-black uppercase tracking-widest">Phase Objective</span>
-                                        </div>
-                                        <h2 className="text-2xl font-black uppercase italic tracking-tight">{currentPhase?.title}</h2>
-                                        <p className="text-slate-400 text-xs font-medium leading-relaxed">{currentPhase?.description}</p>
-                                    </div>
-                                </div>
-
-                                <div className="space-y-12">
-                                    {currentPhase?.questions.map((q) => (
-                                        <div key={q.id} className="space-y-6">
-                                            <div className="flex gap-4">
-                                                <div className="w-1 h-8 bg-[#5c21ff] shrink-0"/>
-                                                <Label className="text-xl font-black italic text-[#0a1d37]">{q.question}</Label>
-                                            </div>
-
-                                            {q.type === "select" ? (
-                                                <div className="grid gap-3 pl-5">
-                                                    {q.options?.map((opt) => (
-                                                        <button key={opt.value} onClick={() => setAnswer(q.id, opt.value)}
-                                                            className={`p-5 text-left border-2 transition-all ${answers[q.id] === opt.value ? "border-[#ffcc00] bg-[#ffcc00]/5" : "border-slate-100 bg-white"}`}>
-                                                            <div className="flex items-center justify-between">
-                                                                <span className={`font-black uppercase italic text-xs ${answers[q.id] === opt.value ? "text-[#0a1d37]" : "text-slate-400"}`}>{opt.label}</span>
-                                                                {answers[q.id] === opt.value && <ShieldCheck className="text-[#ffcc00]" size={20}/>}
-                                                            </div>
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            ) : (
-                                                <div className="pl-5">
-                                                    <Textarea value={answers[q.id] || ""} onChange={(e) => setAnswer(q.id, e.target.value)} className="min-h-[180px] rounded-none border-2 border-slate-100 p-6 text-lg font-medium" placeholder="Your response..." />
-                                                </div>
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-
-                    <div className="flex justify-between items-center mt-20 pt-8 border-t border-slate-100">
-                        <Button variant="ghost" className="font-black uppercase italic text-slate-400" onClick={() => (phaseIndex <= -1 ? navigate("/") : setPhaseIndex(phaseIndex - 1))}>
-                            Previous
-                        </Button>
-                        <Button className="bg-[#0a1d37] text-white rounded-none px-12 h-16 font-black uppercase italic hover:bg-[#5c21ff]"
-                            onClick={() => phaseIndex < totalPhases - 1 ? setPhaseIndex(phaseIndex + 1) : handleSubmit()} disabled={!canNext || loading}>
-                            {loading ? <Loader2 className="animate-spin h-5 w-5"/> : (phaseIndex < totalPhases - 1 ? "Next Step" : "Finalize Audit")}
-                        </Button>
-                    </div>
-                </div>
-            </div>
+            <p className="text-[10px] font-black uppercase italic text-[#0a1d37] mt-2 tracking-widest">Growth Potential</p>
         </div>
     );
 };
 
-export default Onboarding;
+const Dashboard = () => {
+    const navigate = useNavigate();
+    const [scoreResult, setScoreResult] = useState<ScoreResult | null>(null);
+    const [businessName, setBusinessName] = useState("");
+    const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+
+    useEffect(() => {
+        const data = localStorage.getItem("assessment_results");
+        const name = localStorage.getItem("business_name");
+
+        if (!data) {
+            navigate("/onboarding");
+            return;
+        }
+        setScoreResult(JSON.parse(data));
+        setBusinessName(name || "Your Business");
+
+        // Check for PDF URL immediately and then every 2 seconds
+        const checkPdf = () => {
+            const url = localStorage.getItem("pdf_download_url");
+            if (url && url !== "undefined") {
+                setPdfUrl(url);
+            }
+        };
+
+        checkPdf();
+        const interval = setInterval(checkPdf, 2000);
+        return () => clearInterval(interval);
+    }, [navigate]);
+
+    if (!scoreResult) return null;
+
+    const categoryLabel = typeof scoreResult.category === 'object' ? scoreResult.category.label : scoreResult.category;
+
+    const handleDownload = () => {
+        if (pdfUrl) {
+            window.open(pdfUrl, "_blank");
+        } else {
+            // Fallback: check storage one last time manually
+            const manualCheck = localStorage.getItem("pdf_download_url");
+            if (manualCheck) {
+                window.open(manualCheck, "_blank");
+            } else {
+                alert("Your deep-dive report is being finalized by the AI. Since you received the email, it's ready! Please refresh the page to see the download link.");
+            }
+        }
+    };
+
+    return (
+        <div className="min-h-screen bg-[#f8fafc] font-sans text-[#0a1d37]">
+            <nav className="bg-white border-b border-slate-100 h-20 flex items-center justify-between px-8 sticky top-0 z-50">
+                <div className="flex items-center gap-4">
+                    <img src="/logo.png" alt="Logo" className="w-10 h-10 object-contain" />
+                    <div>
+                        <h1 className="text-sm font-black uppercase italic tracking-tighter leading-none">Faleh Audit Engine</h1>
+                        <p className="text-[10px] text-slate-400 uppercase font-bold mt-1">{businessName}</p>
+                    </div>
+                </div>
+                <Button variant="ghost" onClick={() => navigate("/")} className="font-black uppercase italic text-xs gap-2">
+                    <ChevronLeft size={16} /> Exit
+                </Button>
+            </nav>
+
+            <main className="p-6 md:p-8 max-w-7xl mx-auto space-y-6">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+                    <div className="lg:col-span-1 space-y-4">
+                        <ReadinessGauge score={scoreResult.totalScore} />
+
+                        <div className="bg-[#5c21ff] p-6 text-white shadow-lg relative overflow-hidden group">
+                            <ShieldCheck className="mb-3 text-[#ffcc00]" size={28} />
+                            <h3 className="text-sm font-black uppercase italic mb-1 tracking-wider">Audit Status</h3>
+                            <p className="text-lg font-black leading-tight uppercase italic">{categoryLabel}</p>
+                        </div>
+                    </div>
+
+                    <div className="lg:col-span-2 space-y-6">
+                        <section className="bg-white border border-slate-100 p-8 shadow-sm">
+                            <div className="flex items-center justify-between mb-6">
+                                <h2 className="text-xl font-black uppercase italic border-l-6 border-[#5c21ff] pl-4">Strategic Summary</h2>
+                                <Sparkles size={18} className="text-[#5c21ff]" />
+                            </div>
+
+                            <div className="grid md:grid-cols-3 gap-6">
+                                <div className="md:col-span-2 bg-slate-50 p-5 border-r-4 border-[#ffcc00]">
+                                    <p className="text-slate-600 leading-relaxed italic text-xs md:text-sm">
+                                        The audit for <b>{businessName}</b> is complete.
+                                        Your score of <b>{scoreResult.totalScore}%</b> indicates specific operational gaps.
+                                        Download your full roadmap below to view the 90-day expansion strategy.
+                                    </p>
+                                </div>
+                                <div className="md:col-span-1 bg-[#0a1d37] p-5 text-white flex flex-col items-center justify-center text-center">
+                                    <FileText className="text-[#ffcc00] mb-2" size={20} />
+                                    <h4 className="text-[9px] font-black uppercase mb-3 tracking-widest">Detailed Report</h4>
+
+                                    <Button
+                                        onClick={handleDownload}
+                                        className={`w-full rounded-none font-black italic uppercase text-[10px] h-10 transition-all ${
+                                            pdfUrl 
+                                            ? "bg-[#5c21ff] hover:bg-white hover:text-[#0a1d37] shadow-lg" 
+                                            : "bg-slate-700 opacity-80 cursor-wait"
+                                        }`}
+                                    >
+                                        {pdfUrl ? (
+                                            <span className="flex items-center gap-2"><Download size={14}/> Download</span>
+                                        ) : (
+                                            <span className="flex items-center gap-2"><Loader2 size={14} className="animate-spin"/> Generating...</span>
+                                        )}
+                                    </Button>
+
+                                    {!pdfUrl && (
+                                        <button
+                                            onClick={() => window.location.reload()}
+                                            className="mt-3 text-[8px] uppercase font-bold text-slate-400 hover:text-white flex items-center gap-1 mx-auto"
+                                        >
+                                            <RefreshCw size={8}/> Click to Refresh
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        </section>
+
+                        <section className="bg-white border border-slate-100 p-8 shadow-sm">
+                            <div className="flex items-center justify-between mb-8">
+                                <h2 className="text-xl font-black uppercase italic border-l-6 border-[#ffcc00] pl-4">Pillar Breakdown</h2>
+                                <TrendingUp className="text-[#5c21ff]" size={18} />
+                            </div>
+                            <CategoryBreakdown
+                                score={scoreResult.totalScore}
+                                category={categoryLabel}
+                            />
+                        </section>
+                    </div>
+                </div>
+            </main>
+        </div>
+    );
+};
+
+export default Dashboard;
