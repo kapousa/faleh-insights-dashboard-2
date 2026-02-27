@@ -1,10 +1,19 @@
 // Modular API layer — swap WEBHOOK_URL easily
+// n8n
+// Render
 //Testing
-//const WEBHOOK_URL = "https://faleh.app.n8n.cloud/webhook-test/9546ae5f-93cc-49b3-8806-881f3627c808";
+//const WEBHOOK_URL = "https://my-n8n-automation-r7si.onrender.com/webhook-test/9546ae5f-93cc-49b3-8806-881f3627c808";
 //Production
-const WEBHOOK_URL = "https://faleh.app.n8n.cloud/webhook/9546ae5f-93cc-49b3-8806-881f3627c808";
-const WEBHOOK_SEND_OTP_URL = "https://faleh.app.n8n.cloud/webhook-test/eb3e2796-d696-48de-8416-9e44b0b0d37a";
+//const WEBHOOK_URL = "https://my-n8n-automation-r7si.onrender.com/webhook/9546ae5f-93cc-49b3-8806-881f3627c808";
 
+// local
+//Testing
+//const WEBHOOK_URL = "http://localhost:5678/webhook-test/9546ae5f-93cc-49b3-8806-881f3627c808";
+//Production
+const WEBHOOK_URL = "https://my-n8n-automation-r7si.onrender.com/webhook/9546ae5f-93cc-49b3-8806-881f3627c808";
+
+//const WEBHOOK_SEND_OTP_URL = "https://faleh.app.n8n.cloud/webhook-test/eb3e2796-d696-48de-8416-9e44b0b0d37a";
+// End n8n
 
 // ─── Assessment Questions ───
 
@@ -375,23 +384,48 @@ export interface AssessmentSubmission {
 }
 
 export async function submitAssessment(data: AssessmentSubmission): Promise<any> {
+  console.log("🚀 Starting submission to:", WEBHOOK_URL);
+
   try {
     const response = await fetch(WEBHOOK_URL, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      mode: "cors", // Required for cross-origin requests
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json"
+      },
       body: JSON.stringify(data),
     });
 
-    if (!response.ok) throw new Error("Webhook failed");
+    // If we get here, the CORS check passed but the server might have returned an error (404, 500, etc.)
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`❌ Server Error (${response.status}):`, errorText);
+      throw new Error(`Server responded with ${response.status}`);
+    }
 
-    // Return the actual JSON response from n8n
-    return await response.json();
-  } catch (error) {
-    console.log("Using mock mode — webhook not connected", error);
-    return { success: true, sessionId: "mock-session-" + Date.now() };
+    const result = await response.json();
+    console.log("✅ Success! n8n responded with:", result);
+    return result;
+
+  } catch (error: any) {
+    // This block triggers if the BROWSER blocks the request (CORS) or if the network is down
+    console.group("🛑 Webhook Connection Error");
+    console.error("Message:", error.message);
+
+    if (error.message === "Failed to fetch") {
+      console.warn("DIAGNOSIS: This is likely a CORS block. The server at Render is not sending the 'Access-Control-Allow-Origin' header.");
+    }
+    console.groupEnd();
+
+    // Still returning mock data so your app doesn't crash, but we log the error above
+    return {
+      success: true,
+      sessionId: "mock-session-" + Date.now(),
+      mocked: true
+    };
   }
 }
-
 // ─── Processing Steps ───
 
 export const PROCESSING_STEPS = [
