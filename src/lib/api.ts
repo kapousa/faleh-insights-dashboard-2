@@ -390,48 +390,13 @@ export interface AssessmentSubmission {
     score: ScoreResult;
 }
 
-export async function submitAssessment(data: AssessmentSubmission): Promise<any> {
-    console.log("🚀 Starting submission to:", WEBHOOK_URL);
-
-    try {
-        const response = await fetch(WEBHOOK_URL, {
-            method: "POST",
-            mode: "cors", // Required for cross-origin requests
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            },
-            body: JSON.stringify(data),
-        });
-
-        // If we get here, the CORS check passed but the server might have returned an error (404, 500, etc.)
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error(`❌ Server Error (${response.status}):`, errorText);
-            throw new Error(`Server responded with ${response.status}`);
-        }
-
-        const result = await response.json();
-        console.log("✅ Success! n8n responded with:", result);
-        return result;
-
-    } catch (error: any) {
-        // This block triggers if the BROWSER blocks the request (CORS) or if the network is down
-        console.group("🛑 Webhook Connection Error");
-        console.error("Message:", error.message);
-
-        if (error.message === "Failed to fetch") {
-            console.warn("DIAGNOSIS: This is likely a CORS block. The server at Render is not sending the 'Access-Control-Allow-Origin' header.");
-        }
-        console.groupEnd();
-
-        // Still returning mock data so your app doesn't crash, but we log the error above
-        return {
-            success: true,
-            sessionId: "mock-session-" + Date.now(),
-            mocked: true
-        };
-    }
+export async function submitAssessment(data: any): Promise<any> {
+    const response = await fetch(WEBHOOK_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+    });
+    return response.json();
 }
 
 // ─── Processing Steps ───

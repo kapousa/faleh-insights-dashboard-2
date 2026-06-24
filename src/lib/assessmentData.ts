@@ -77,7 +77,8 @@ export type WizardAnswers = Record<number, Record<number, number>>; // phaseId -
 export interface WizardScore {
   totalScore: number;
   pillarScores: { name: string; percentage: number; color: string }[];
-  category: { label: string; color: string };
+  category: { label: string; color: string, description: string;
+  recommendation?: string; };
 }
 
 // Each question has 4 options; option index 0 = best (3pts), 3 = worst (0pts)

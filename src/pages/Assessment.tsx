@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Loader2, Lock, CheckCircle2, ShieldCheck } from "lucide-react";
+import { PieChart, Pie, Cell } from "recharts"; // Added Recharts for visual graphs
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,6 +13,7 @@ import {
   type WizardAnswers,
 } from "@/lib/assessmentData";
 import { submitAssessment } from "@/lib/api";
+
 
 type Screen =
   | "welcome" | "verify" | "contact" | "wizard"
@@ -25,6 +27,37 @@ const PROCESSING_LABELS = [
   "Generating your readiness report...",
 ];
 
+// --- New Metric Card Component for the Gate Screen ---
+const MetricCard = ({ label, score }: { label: string; score: number }) => {
+  const data = [{ value: score }, { value: 100 - score }];
+  // Scaled dimensions to 75% (96px instead of 128px)
+  return (
+    <div className="bg-white/5 p-4 rounded-xl flex flex-col items-center border border-white/10 shadow-lg relative overflow-hidden">
+      <h4 className="text-white/60 text-[10px] font-bold mb-2 uppercase tracking-[2px] text-center h-6 flex items-center justify-center">
+        {label}
+      </h4>
+      <div className="relative w-24 h-24 flex items-center justify-center">
+        <PieChart width={96} height={96}>
+          <Pie
+            data={data}
+            innerRadius={36} // Scaled
+            outerRadius={45} // Scaled
+            startAngle={90}
+            endAngle={-270}
+            dataKey="value"
+            stroke="none"
+          >
+            <Cell fill="#FFD700" />
+            <Cell fill="rgba(255,255,255,0.05)" />
+          </Pie>
+        </PieChart>
+        <div className="absolute inset-0 flex items-center justify-center text-xl font-display font-bold text-white">
+          {score}%
+        </div>
+      </div>
+    </div>
+  );
+};
 const Assessment = () => {
   const navigate = useNavigate();
   const [screen, setScreen] = useState<Screen>("welcome");
@@ -94,8 +127,6 @@ const Assessment = () => {
   const handlePay = async () => {
     setPaying(true);
     try {
-      // Replace with a real Stripe Checkout session call to your n8n/backend.
-      // For now we notify n8n and assume success; swap this for a real session redirect.
       const res = await submitAssessment({
         businessName: bizName,
         contactName: fullName,
@@ -105,16 +136,17 @@ const Assessment = () => {
         brandScore: score.pillarScores[0]?.percentage ?? 0,
         opsScore: score.pillarScores[1]?.percentage ?? 0,
         finScore: score.pillarScores[2]?.percentage ?? 0,
-        answers: {} as any,
+        answers: answers as any,
         score: score as any,
       });
+
       const resData = res as any;
       const link = resData?.downloadLink || resData?.data?.downloadLink || null;
       setDownloadUrl(link);
       setScreen("confirm");
     } catch (e) {
-      console.error(e);
-      setScreen("confirm");
+      console.error("Submission failed:", e);
+      alert("There was an issue processing your request. Please try again.");
     } finally {
       setPaying(false);
     }
@@ -237,17 +269,18 @@ const Assessment = () => {
               </div>
 
               <Button
-                className="w-full mt-8 h-12 bg-brand-navy hover:bg-brand-navyDim text-white font-display font-extrabold"
-                onClick={() => {
-                  if (!fullName.trim() || !email.includes("@") || !phone.trim() || !role) {
-                    alert("Please complete all fields to continue.");
-                    return;
-                  }
-                  setScreen("wizard");
-                }}
-              >
-                Start Assessment →
-              </Button>
+  className="w-full mt-8 h-12 bg-brand-navy hover:bg-brand-navyDim text-white font-display font-extrabold"
+  onClick={() => {
+    if (!fullName.trim() || !email.includes("@") || !phone.trim() || !role) {
+      alert("Please complete all fields to continue.");
+      return;
+    }
+    // Changed from setScreen("wizard") to ensure clean flow
+    setScreen("wizard");
+  }}
+>
+  Start Free Assessment →
+</Button>
             </div>
           </motion.div>
         )}
@@ -354,81 +387,51 @@ const Assessment = () => {
         )}
 
         {screen === "gate" && (
-          <motion.div key="gate" initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
-            className="min-h-screen bg-brand-navy flex items-center justify-center px-6 py-12">
-            <div className="bg-white rounded-3xl max-w-xl w-full overflow-hidden shadow-2xl">
-              <div className="bg-brand-navy p-9 relative">
-                <div className="flex items-center gap-2 mb-7">
-                  <div className="w-6 h-6 bg-brand-gold flex items-center justify-center font-display font-extrabold text-xs text-brand-navy" style={{ clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)" }}>F</div>
-                  <span className="font-display text-base font-extrabold text-white">FALEH</span>
-                </div>
-                <div className="relative">
-                  <div className="flex items-end gap-5 blur-[8px] select-none">
-                    <span className="font-display text-7xl font-extrabold text-white">{score.totalScore}</span>
-                    <span className="font-display text-3xl font-extrabold text-white/30 mb-2">%</span>
-                    <div className="flex-1">
-                      <p className="text-[10px] font-bold uppercase tracking-[3px] text-white/40 mb-2">Franchise Readiness</p>
-                      <span className="inline-block bg-red-500/20 border border-red-400/40 text-red-300 text-[11px] font-bold uppercase tracking-wide px-3.5 py-1.5 rounded">{score.category.label}</span>
-                    </div>
+          <motion.div
+            key="gate"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="min-h-screen bg-brand-navy flex flex-col items-center justify-center px-6 py-12 text-center"
+          >
+            <div className="max-w-4xl w-full">
+              <h3 className="text-3xl md:text-4xl font-display font-extrabold text-white mb-2">Your Readiness Score</h3>
+              <p className="text-white/50 mb-8">Based on the Faleh 3-pillar evaluation framework</p>
+
+              {/* Display Total Score */}
+              <div className="text-6xl md:text-5xl font-extrabold text-brand-gold mb-8 drop-shadow-xl">
+        {score.totalScore}%
+      </div>
+
+              {/* Display Charts/Graphs Using Recharts */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <MetricCard label={score.pillarScores[0]?.name || "Brand & Market"} score={score.pillarScores[0]?.percentage ?? 0} />
+        <MetricCard label={score.pillarScores[1]?.name || "Operations"} score={score.pillarScores[1]?.percentage ?? 0} />
+        <MetricCard label={score.pillarScores[2]?.name || "Financials"} score={score.pillarScores[2]?.percentage ?? 0} />
+      </div>
+
+              {/* Display Solution/Theme */}
+              <div className="bg-gradient-to-br from-white/10 to-transparent p-8 rounded-3xl border border-brand-gold/30 text-left mb-10 relative overflow-hidden shadow-2xl">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-brand-gold/10 blur-3xl rounded-full pointer-events-none"></div>
+                <h3 className="text-sm font-bold uppercase tracking-[3px] text-brand-gold mb-3">Strategic Insight</h3>
+                <h4 className="text-2xl font-display font-bold text-white mb-3">{score.category.label}</h4>
+                <p className="text-white/80 leading-relaxed text-lg">
+                  {score.category.description}
+                </p>
+                {/* Fallback check in case 'recommendation' isn't explicitly defined in your current assessmentData */}
+                {score.category.recommendation && (
+                  <div className="mt-6 inline-block bg-brand-gold/10 px-5 py-3 rounded-lg border border-brand-gold/20">
+                     <span className="text-brand-gold font-semibold text-sm">Focus Area: {score.category.recommendation}</span>
                   </div>
-                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-brand-navy/60 backdrop-blur-[1px] rounded-lg">
-                    <Lock className="w-10 h-10 text-brand-gold mb-2" />
-                    <p className="text-sm text-white/70 font-medium">Your full score is ready</p>
-                  </div>
-                </div>
-                <div className="mt-7 space-y-2.5 blur-[3px] pointer-events-none select-none">
-                  {score.pillarScores.map((p) => (
-                    <div key={p.name} className="flex items-center gap-2.5">
-                      <span className="text-[10px] font-bold uppercase tracking-wide text-white/35 w-28 shrink-0">{p.name}</span>
-                      <div className="flex-1 h-1 bg-white/10 rounded-full overflow-hidden">
-                        <div className="h-full rounded-full" style={{ width: `${p.percentage}%`, background: p.color }} />
-                      </div>
-                      <span className="text-[11px] font-bold text-white/20 w-8 text-right">{p.percentage}%</span>
-                    </div>
-                  ))}
-                </div>
+                )}
               </div>
 
-              <div className="p-9">
-                <h2 className="font-display text-2xl font-extrabold text-brand-navy mb-2">Unlock your complete Franchise Readiness Report</h2>
-                <p className="text-sm text-brand-muted mb-6 leading-relaxed">Your assessment is complete. Unlock the full report to see your score, every pillar breakdown, and your personalised 90-day action plan.</p>
-
-                <div className="space-y-2.5 mb-7">
-                  {[
-                    "Full readiness score + tier classification",
-                    "Detailed three-pillar breakdown with reasoning",
-                    "Critical gap analysis ranked by impact",
-                    "Personalised 90-day readiness roadmap",
-                    "Downloadable branded PDF report",
-                  ].map((t) => (
-                    <div key={t} className="flex items-center gap-2.5">
-                      <ShieldCheck className="w-4 h-4 text-[#5c21ff] shrink-0" />
-                      <span className="text-sm text-brand-navy">{t}</span>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="bg-[#5c21ff]/[0.06] border border-[#5c21ff]/15 rounded-xl p-4 flex items-center gap-3.5 mb-6">
-                  <span className="text-2xl">🎯</span>
-                  <p className="text-[13px] text-brand-navy leading-relaxed">
-                    <strong className="text-[#5c21ff]">Included: 15-Minute Expert Debrief.</strong> Book a call with an FME franchise consultant to walk through your results — at no extra cost.
-                  </p>
-                </div>
-
-                <div className="flex items-center justify-between mb-4">
-                  <span className="text-sm text-brand-muted">One-time report fee</span>
-                  <span className="font-display text-2xl font-extrabold text-brand-navy">AED 3,500 <span className="text-xs font-normal text-brand-muted">incl. VAT</span></span>
-                </div>
-
-                <Button className="w-full h-14 bg-brand-gold hover:bg-brand-goldDim text-brand-navy font-display font-extrabold text-base" onClick={() => setScreen("payment")}>
-                  Unlock My Full Report →
-                </Button>
-                <div className="flex justify-center gap-5 text-xs text-brand-muted mt-4">
-                  <span>🔒 Secure payment</span>
-                  <span>⚡ Instant PDF delivery</span>
-                  <span>🇦🇪 UAE franchise standard</span>
-                </div>
-              </div>
+              <Button
+  disabled={paying}
+  onClick={() => setScreen("payment")} // Updated: Now navigates to payment screen
+  className="bg-brand-gold hover:bg-brand-goldDim text-brand-navy font-display font-extrabold px-12 h-16 text-lg w-full md:w-auto shadow-[0_0_40px_-10px_rgba(255,215,0,0.4)]"
+>
+  Pay AED 3,500 to Unlock Full Report
+</Button>
             </div>
           </motion.div>
         )}
