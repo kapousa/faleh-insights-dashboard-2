@@ -8,10 +8,10 @@
 
 // local
 //Testing
-//const WEBHOOK_URL = "http://localhost:5678/webhook-test/9546ae5f-93cc-49b3-8806-881f3627c808";
+const WEBHOOK_URL = "http://localhost:5678/webhook-test/9546ae5f-93cc-49b3-8806-881f3627c808";
 //const WEBHOOK_URL = "https://my-n8n-automation-r7si.onrender.com/webhook-test/9546ae5f-93cc-49b3-8806-881f3627c808"
 //Production
-const WEBHOOK_URL = "https://my-n8n-automation-r7si.onrender.com/webhook/9546ae5f-93cc-49b3-8806-881f3627c808";
+//const WEBHOOK_URL = "https://my-n8n-automation-r7si.onrender.com/webhook/9546ae5f-93cc-49b3-8806-881f3627c808";
 
 //const WEBHOOK_URL = "/api-n8n/webhook/9546ae5f-93cc-49b3-8806-881f3627c808";
 

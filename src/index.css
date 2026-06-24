@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,67 +6,58 @@
 
 @layer base {
   :root {
-    /* الخلفية البيضاء الأساسية */
     --background: 0 0% 100%;
-    --foreground: 222 47% 11%;
+    --foreground: 217 56% 12%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 217 56% 12%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    --popover-foreground: 217 56% 12%;
 
-    /* البنفسجي الإمبراطوري #5c21ff */
-    --primary: 256 100% 56%;
+    /* Navy primary */
+    --primary: 217 64% 13%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 222 47% 11%;
+    --secondary: 220 33% 96%;
+    --secondary-foreground: 217 56% 12%;
 
-    --muted: 210 40% 96%;
+    --muted: 220 33% 96%;
     --muted-foreground: 215 16% 47%;
 
-    /* الذهبي الملكي #ffcc00 */
+    /* Gold accent */
     --accent: 48 100% 50%;
-    --accent-foreground: 222 47% 11%;
+    --accent-foreground: 217 56% 12%;
+
+    /* New Purple Brand Color */
+    --brand-purple: #5c21ff;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 210 40% 98%;
 
     --border: 214 32% 91%;
     --input: 214 32% 91%;
-    --ring: 256 100% 56%;
+    --ring: 48 100% 50%;
 
     --radius: 0.5rem;
 
-    /* إزالة الأخطاء القديمة عبر استبدالها بتعريفات جديدة ونظيفة */
-    --gradient-hero: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-    --gradient-brand: linear-gradient(135deg, #5c21ff 0%, #4214bc 100%);
-    --shadow-brand: 0 10px 30px -10px rgba(92, 33, 255, 0.3);
-    --shadow-card: 0 2px 15px -3px rgba(0, 0, 0, 0.07), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    --gradient-hero: linear-gradient(180deg, #0a1d37 0%, #13294d 100%);
+    --shadow-brand: 0 20px 50px -15px rgba(10, 29, 55, 0.45);
   }
 }
 
 @layer base {
-  * {
-    @apply border-border;
-  }
+  * { @apply border-border; }
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
 
-/* تحسين شكل شريط التقدم ليكون بنفسجياً */
-[data-radix-progress-indicator] {
-  background-color: #5c21ff !important;
-}
+@layer components {
+  /* ... existing .logo-hex ... */
 
-/* تنسيق عام للأزرار لضمان ظهور النص بوضوح */
-.btn-primary {
-  @apply bg-[#5c21ff] text-white hover:bg-[#4214bc] transition-colors;
-}
-
-.btn-accent {
-  @apply bg-[#ffcc00] text-[#0a1d37] hover:bg-[#e6b800] transition-colors;
+  .text-brand-purple { color: var(--brand-purple); }
+  .bg-brand-purple { background-color: var(--brand-purple); }
+  .border-brand-purple { border-color: var(--brand-purple); }
 }

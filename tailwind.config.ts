@@ -1,43 +1,45 @@
-import type { Config } from "tailwindcss";
-import * as animate from "tailwindcss-animate";
-
-export default {
+/** @type {import('tailwindcss').Config} */
+module.exports = {
   darkMode: ["class"],
-  content: [
-    "./pages/**/*.{ts,tsx}",
-    "./components/**/*.{ts,tsx}",
-    "./app/**/*.{ts,tsx}",
-    "./src/**/*.{ts,tsx}",
-  ],
-  prefix: "",
+  content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
     extend: {
       colors: {
-        // الألوان الجديدة من الصورة (Franchise Middle East)
-        brand: {
-          purple: "#5222dc",    // الأرجواني الأساسي
-          gold: "#ffcc00",      // الأصفر الذهبي
-          navy: "#0a1d37",      // الكحلي للنصوص
-          slate: "#f1f5f9",     // الخلفيات الفاتحة
-        },
-        primary: {
-          DEFAULT: "#5222dc",
-          foreground: "#ffffff",
-        },
-        accent: {
-          DEFAULT: "#ffcc00",
-          foreground: "#0a1d37",
-        },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
+        primary: {
+          DEFAULT: "hsl(var(--primary))",
+          foreground: "hsl(var(--primary-foreground))",
+        },
+        secondary: {
+          DEFAULT: "hsl(var(--secondary))",
+          foreground: "hsl(var(--secondary-foreground))",
+        },
+        accent: {
+          DEFAULT: "hsl(var(--accent))",
+          foreground: "hsl(var(--accent-foreground))",
+        },
+        muted: {
+          DEFAULT: "hsl(var(--muted))",
+          foreground: "hsl(var(--muted-foreground))",
+        },
+        // Adding custom brand colors based on your code
+        brand: {
+          navy: "#0a1d37",
+          gold: "#ffc107",
+          goldDim: "#e0a800",
+          purple: "#5c21ff",
+        },
       },
-      fontFamily: {
-        sans: ["Inter", "system-ui", "sans-serif"],
+      borderRadius: {
+        lg: "var(--radius)",
+        md: "calc(var(--radius) - 2px)",
+        sm: "calc(var(--radius) - 4px)",
       },
     },
   },
-  plugins: [animate], // هنا نضع المتغير الذي استوردناه في الأعلى
-} satisfies Config;
+  plugins: [require("tailwindcss-animate")],
+};
