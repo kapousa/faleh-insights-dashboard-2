@@ -90,7 +90,7 @@ const Assessment = () => {
     const answeredCount = Object.values(answers).reduce(
         (s, m) => s + Object.keys(m).length, 0
     );
-    const score = calculateWizardScore(answers);
+    const score = calculateWizardScore(answers)
     const phase = WIZARD_PHASES[phaseIdx];
 
     // Drive processing animation

@@ -113,3 +113,10 @@ export function calculateWizardScore(answers: WizardAnswers): WizardScore {
 }
 
 export const TOTAL_QUESTIONS = WIZARD_PHASES.reduce((s, p) => s + p.questions.length, 0);
+
+export interface AssessmentScore {
+  totalScore: number;
+  pillarScores: { percentage: number; label: string }[];
+  category: { label: string; color: string };
+  criticalGaps: any;
+}
