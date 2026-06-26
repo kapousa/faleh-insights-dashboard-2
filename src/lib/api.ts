@@ -11,9 +11,6 @@
 //const WEBHOOK_URL = "http://localhost:5678/webhook-test/9546ae5f-93cc-49b3-8806-881f3627c808";
 //Production
 const WEBHOOK_URL = "https://faleh-faleh-n8n.qvyj0e.easypanel.host/webhook/9546ae5f-93cc-49b3-8806-881f3627c808";
-
-//const WEBHOOK_URL = "/api-n8n/webhook/9546ae5f-93cc-49b3-8806-881f3627c808";
-//const WEBHOOK_SEND_OTP_URL = "https://faleh.app.n8n.cloud/webhook-test/eb3e2796-d696-48de-8416-9e44b0b0d37a";
 // End n8n
 
 // ─── Assessment Questions ───
