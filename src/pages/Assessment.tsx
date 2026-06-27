@@ -191,10 +191,11 @@ const handlePay = async () => {
                         <div
                             className="absolute w-[500px] h-[500px] rounded-full bg-brand-gold/10 blur-3xl top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none"/>
                         <div className="flex items-center gap-3 mb-14 relative z-10">
-                            <div
-                                className="w-11 h-11 bg-brand-purple flex items-center justify-center font-display font-extrabold text-brand-gold"
-                                style={{clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)"}}>F
-                            </div>
+                            <img
+    src="/logo.png"
+    alt="FALEH Logo"
+    className="w-11 h-11 object-contain"
+/>
                             <span className="font-display text-2xl font-extrabold text-white">FALEH</span>
                         </div>
                         <p className="text-brand-gold text-xs font-bold uppercase tracking-[3px] mb-5 relative z-10">Franchise
@@ -368,11 +369,12 @@ const handlePay = async () => {
                         <div
                             className="w-full md:w-[280px] bg-brand-navy p-10 flex flex-col shrink-0 md:sticky md:top-0 md:h-screen">
                             <div className="flex items-center gap-2 mb-10">
-                                <div
-                                    className="w-7 h-7 bg-brand-gold flex items-center justify-center font-display font-extrabold text-xs text-brand-navy"
-                                    style={{clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)"}}>F
-                                </div>
-                                <span className="font-display text-lg font-extrabold text-white">FALEH</span>
+                                <img
+    src="/logo.png"
+    alt="FALEH Logo"
+    className="w-11 h-11 object-contain"
+/>                            <span className="font-display text-2xl font-extrabold text-white">FALEH</span>
+
                             </div>
                             <p className="text-[10px] font-bold uppercase tracking-[3px] text-brand-gold mb-1">{phase.phaseLabel}</p>
                             <p className="font-display text-base font-extrabold text-white mb-8">{phase.name}</p>
@@ -453,10 +455,11 @@ const handlePay = async () => {
                     <motion.div key="processing" initial={{opacity: 0}} animate={{opacity: 1}} exit={{opacity: 0}}
                                 className="min-h-screen bg-brand-navy flex flex-col items-center justify-center px-6 text-center">
                         <div className="flex items-center gap-3 mb-16">
-                            <div
-                                className="w-9 h-9 bg-brand-gold flex items-center justify-center font-display font-extrabold text-brand-navy"
-                                style={{clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)"}}>F
-                            </div>
+                            <img
+    src="/logo.png"
+    alt="FALEH Logo"
+    className="w-11 h-11 object-contain"
+/>
                             <span className="font-display text-xl font-extrabold text-white">FALEH AUDIT ENGINE</span>
                         </div>
                         <Loader2 className="w-16 h-16 text-brand-gold animate-spin mb-10"/>
