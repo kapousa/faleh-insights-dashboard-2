@@ -1,17 +1,8 @@
-// Modular API layer — swap WEBHOOK_URL easily
-// n8n
-// Render
-//Testing
-//const WEBHOOK_URL = "https://my-n8n-automation-r7si.onrender.com/webhook-test/9546ae5f-93cc-49b3-8806-881f3627c808";
-//Production
-//const WEBHOOK_URL = "https://my-n8n-automation-r7si.onrender.com/webhook/9546ae5f-93cc-49b3-8806-881f3627c808";
-
-// n8n webhook url
-//Testing
-//const WEBHOOK_URL = "http://localhost:5678/webhook-test/9546ae5f-93cc-49b3-8806-881f3627c808";
-//Production
-const WEBHOOK_URL = "https://faleh-faleh-n8n.qvyj0e.easypanel.host/webhook/9546ae5f-93cc-49b3-8806-881f3627c808";
-// End n8n
+// NOTE: the direct-to-n8n WEBHOOK_URL is no longer used here. submitAssessment
+// now saves the assessment straight to FastAPI/Postgres (fast, no AI/report
+// generation yet). The actual report (via your "Executive Summary" n8n flow)
+// is only generated AFTER successful payment, triggered by the Stripe webhook
+// workflow — this avoids paying for report generation for users who never pay.
 
 // ─── FastAPI backend (Stripe session create/verify) ───
 // Set this in your .env.local / Vite env config, e.g.:
@@ -22,8 +13,8 @@ if (!API_BASE_URL) {
     // Don't throw — just warn loudly, so the rest of the app (assessment wizard etc.)
     // still works even before this env var is configured.
     console.warn(
-        "[api.ts] VITE_API_BASE_URL is not set. Payment endpoints (create-checkout-session, " +
-        "verify session) will fail until this is configured."
+        "[api.ts] VITE_API_BASE_URL is not set. Submission/payment endpoints " +
+        "will fail until this is configured."
     );
 }
 
@@ -311,13 +302,6 @@ const SCORE_CATEGORIES: ScoreCategory[] = [
 
 // ─── Submission ───
 
-export interface AssessmentSubmissionResponse {
-    // This is what your Cloudinary-upload n8n workflow actually returns —
-    // the report PDF already exists by the time the user reaches payment.
-    secure_url: string;
-    public_id: string;
-}
-
 export interface AssessmentPayload {
     businessDetails: {
         bizName: string;
@@ -343,17 +327,34 @@ export interface AssessmentPayload {
     timestamp: string;
 }
 
+export interface AssessmentSubmitResponse {
+    // FastAPI saves the raw answers to Postgres and hands back an id —
+    // no report is generated at this point. The actual report only gets
+    // generated after payment, by the Stripe webhook calling your
+    // Executive Summary n8n flow.
+    submission_id: string;
+}
+
 export async function submitAssessment(
     data: AssessmentPayload
-): Promise<AssessmentSubmissionResponse> {
-    const response = await fetch(WEBHOOK_URL, {
+): Promise<AssessmentSubmitResponse> {
+    if (!API_BASE_URL) {
+        throw new Error(
+            "API_BASE_URL is not configured (set VITE_API_BASE_URL in your .env)."
+        );
+    }
+
+    const response = await fetch(`${API_BASE_URL}/api/assessments/submit`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
     });
 
     if (!response.ok) {
-        throw new Error(`Assessment submission failed (${response.status})`);
+        const errBody = await response.json().catch(() => ({}));
+        throw new Error(
+            errBody.detail || `Assessment submission failed (${response.status})`
+        );
     }
 
     return response.json();
@@ -363,12 +364,12 @@ export async function submitAssessment(
 //
 // IMPORTANT: these call YOUR FastAPI backend, never Stripe directly from the
 // browser, and never the n8n webhook. n8n is reserved for reacting to the
-// `checkout.session.completed` event asynchronously (emailing the PDF, etc.).
+// `checkout.session.completed` event asynchronously — including generating
+// the actual report now, and emailing it.
 
 export interface CreateCheckoutSessionPayload {
     email: string;
-    reportUrl: string;
-    publicId?: string;
+    submissionId: string;
 }
 
 export interface CreateCheckoutSessionResponse {
@@ -391,8 +392,7 @@ export async function createCheckoutSession(
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                report_url: payload.reportUrl,
-                public_id: payload.publicId,
+                submission_id: payload.submissionId,
                 customer_email: payload.email,
             }),
         }
@@ -411,7 +411,12 @@ export async function createCheckoutSession(
 export interface VerifySessionResponse {
     paid: boolean;
     email: string | null;
+    // report_url is null until the Executive Summary flow finishes running
+    // (triggered by the webhook, after payment). report_ready tells the
+    // frontend explicitly whether it's safe to show the download button yet,
+    // versus still being generated.
     report_url: string | null;
+    report_ready: boolean;
     invoice_url: string | null;
     invoice_pdf: string | null;
 }

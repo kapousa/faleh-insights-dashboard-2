@@ -87,13 +87,14 @@ const Assessment = () => {
 
     // Processing
     const [procStep, setProcStep] = useState(0);
-    const [reportUrl, setReportUrl] = useState<string | null>(null);
-    const [publicId, setPublicId] = useState<string | null>(null);
+    const [submissionId, setSubmissionId] = useState<string | null>(null);
 
     // Payment
     const [paying, setPaying] = useState(false);
     const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
     const [invoiceUrl, setInvoiceUrl] = useState<string | null>(null);
+    const [reportReady, setReportReady] = useState(false);
+    const [paymentConfirmed, setPaymentConfirmed] = useState(false);
 
     const answeredCount = Object.values(answers).reduce(
         (s, m) => s + Object.keys(m).length, 0
@@ -101,9 +102,12 @@ const Assessment = () => {
     const score = calculateWizardScore(answers)
     const phase = WIZARD_PHASES[phaseIdx];
 
-    // Drive processing animation AND generate the report (Cloudinary) for real.
-    // The report MUST exist before the user reaches the payment screen, since
-    // the Stripe Checkout Session needs reportUrl in its metadata up front.
+    // Drive processing animation AND save the assessment submission for real.
+    // NOTE: this is now a lightweight save (Postgres via FastAPI) — it does
+    // NOT generate the actual report. The report is only generated AFTER
+    // payment succeeds, triggered by the Stripe webhook calling the
+    // Executive Summary n8n flow. This avoids paying for report generation
+    // for users who complete the wizard but never pay.
     useEffect(() => {
         if (screen !== "processing") return;
 
@@ -146,8 +150,7 @@ const Assessment = () => {
         submitAssessment(fullPayload)
             .then((result) => {
                 if (cancelled) return;
-                setReportUrl(result.secure_url);
-                setPublicId(result.public_id);
+                setSubmissionId(result.submission_id);
 
                 const elapsed = Date.now() - startedAt;
                 const remaining = Math.max(MIN_VISUAL_MS - elapsed, 0);
@@ -159,10 +162,10 @@ const Assessment = () => {
             })
             .catch((err) => {
                 if (cancelled) return;
-                console.error("Report generation failed:", err);
+                console.error("Assessment submission failed:", err);
                 clearInterval(stepTimer);
                 alert(
-                    "We couldn't generate your report. Please try again — if this keeps happening, contact support."
+                    "We couldn't save your assessment. Please try again — if this keeps happening, contact support."
                 );
                 setScreen("wizard"); // let them retry rather than getting stuck on "processing" forever
             });
@@ -179,21 +182,56 @@ useEffect(() => {
 
     setScreen("confirm");
 
-    verifyPaymentSession(sessionId)
-        .then((data) => {
-            if (data.paid) {
-                // report_url is already a direct, public Cloudinary link —
-                // no extra backend endpoint needed to fetch the file.
-                if (data.report_url) setDownloadUrl(data.report_url);
-                if (data.invoice_url) setInvoiceUrl(data.invoice_url);
-            } else {
-                // Payment hasn't registered as 'paid' yet (rare, but possible if
-                // the user lands here before Stripe finalizes). The email will
-                // still arrive once the n8n webhook fires.
-                console.warn("Session not marked as paid yet:", data);
-            }
-        })
-        .catch((err) => console.error("Failed to verify payment session:", err));
+    let cancelled = false;
+    let attempts = 0;
+    // Report generation (Executive Summary flow) runs after payment and can
+    // take a while — poll every 4s, give up showing the live download button
+    // after ~2 minutes (the email will still arrive regardless of this timer).
+    const MAX_ATTEMPTS = 30;
+    const POLL_INTERVAL_MS = 4000;
+
+    const poll = () => {
+        if (cancelled) return;
+        attempts += 1;
+
+        verifyPaymentSession(sessionId)
+            .then((data) => {
+                if (cancelled) return;
+
+                if (data.paid) {
+                    setPaymentConfirmed(true);
+                    if (data.invoice_url) setInvoiceUrl(data.invoice_url);
+
+                    if (data.report_ready && data.report_url) {
+                        setDownloadUrl(data.report_url);
+                        setReportReady(true);
+                        return; // done — stop polling
+                    }
+                } else {
+                    // Payment hasn't registered as 'paid' yet (rare, but possible
+                    // if the user lands here before Stripe finalizes).
+                    console.warn("Session not marked as paid yet:", data);
+                }
+
+                if (attempts < MAX_ATTEMPTS) {
+                    setTimeout(poll, POLL_INTERVAL_MS);
+                }
+                // After MAX_ATTEMPTS, stop polling silently — the confirm
+                // screen's copy already tells the user to check their email.
+            })
+            .catch((err) => {
+                console.error("Failed to verify payment session:", err);
+                if (!cancelled && attempts < MAX_ATTEMPTS) {
+                    setTimeout(poll, POLL_INTERVAL_MS);
+                }
+            });
+    };
+
+    poll();
+
+    return () => {
+        cancelled = true;
+    };
 }, [searchParams]);
 
     const selectAnswer = (qIdx: number, optIdx: number) => {
@@ -224,10 +262,10 @@ const handlePay = async () => {
     return;
   }
 
-  if (!reportUrl) {
-    // Shouldn't normally happen — the report is generated during the
+  if (!submissionId) {
+    // Shouldn't normally happen — the submission is saved during the
     // "processing" screen, before the user ever reaches "payment".
-    alert("Your report isn't ready yet. Please wait a moment and try again.");
+    alert("Your assessment isn't saved yet. Please wait a moment and try again.");
     return;
   }
 
@@ -235,11 +273,11 @@ const handlePay = async () => {
 
   try {
     // Ask the FastAPI backend to create a Stripe Checkout Session,
-    // carrying the already-generated report link through as metadata.
+    // carrying the submission_id through as metadata. The actual report
+    // doesn't exist yet — it gets generated after payment succeeds.
     const {checkout_url} = await createCheckoutSession({
       email,
-      reportUrl,
-      publicId: publicId ?? undefined,
+      submissionId,
     });
 
     // Redirect the browser to Stripe's hosted Checkout page.
@@ -660,19 +698,36 @@ const handlePay = async () => {
                     <motion.div key="confirm" initial={{opacity: 0, scale: 0.9}} animate={{opacity: 1, scale: 1}}
                                 exit={{opacity: 0}}
                                 className="min-h-screen bg-brand-navy flex flex-col items-center justify-center px-6 text-center py-16">
-                        <div
-                            className="w-20 h-20 rounded-full bg-green-500/15 border-2 border-green-400/40 flex items-center justify-center text-4xl mb-8">✓
-                        </div>
-                        <p className="text-xs font-bold uppercase tracking-[3px] text-green-400 mb-4">Payment
-                            Confirmed</p>
-                        <h2 className="font-display text-3xl md:text-4xl font-extrabold text-white max-w-md mb-4">Your
-                            report is on its way</h2>
-                        <p className="text-white/45 max-w-sm mb-12">We've sent your Franchise Readiness Report to your
-                            inbox. Check your email — it should arrive within the next 2 minutes.</p>
+                        {paymentConfirmed ? (
+                            <>
+                                <div
+                                    className="w-20 h-20 rounded-full bg-green-500/15 border-2 border-green-400/40 flex items-center justify-center text-4xl mb-8">✓
+                                </div>
+                                <p className="text-xs font-bold uppercase tracking-[3px] text-green-400 mb-4">Payment
+                                    Confirmed</p>
+                            </>
+                        ) : (
+                            <>
+                                <div
+                                    className="w-20 h-20 rounded-full bg-white/10 border-2 border-white/20 flex items-center justify-center mb-8">
+                                    <Loader2 className="animate-spin w-8 h-8 text-white/60" />
+                                </div>
+                                <p className="text-xs font-bold uppercase tracking-[3px] text-white/40 mb-4">Verifying
+                                    Payment</p>
+                            </>
+                        )}
+                        <h2 className="font-display text-3xl md:text-4xl font-extrabold text-white max-w-md mb-4">
+                            {reportReady ? "Your report is ready" : "Your report is being generated"}
+                        </h2>
+                        <p className="text-white/45 max-w-sm mb-12">
+                            {reportReady
+                                ? "We've also sent your Franchise Readiness Report to your inbox."
+                                : "This usually takes under a minute. We'll also email it to you the moment it's ready — feel free to keep this tab open or close it and check your inbox."}
+                        </p>
 
                         <div className="flex flex-col gap-4 max-w-md w-full mb-12">
                             {[
-                                ["1", "Download your PDF report", "Your full assessment is in your inbox now. Review it before your debrief call."],
+                                ["1", "Download your PDF report", "Your full assessment will be in your inbox shortly. Review it before your debrief call."],
                                 ["2", "Book your 15-minute debrief", "A calendar link is included in your email. Book a slot with an FME consultant within 7 days."],
                                 ["3", "Start your 90-day roadmap", "Your report includes a prioritised action plan. Begin with the highest-impact items first."],
                             ].map(([n, t, d]) => (
@@ -689,13 +744,13 @@ const handlePay = async () => {
                         </div>
 
                         <Button
-                            className="bg-brand-gold hover:bg-brand-goldDim text-brand-navy font-display font-extrabold px-12 h-14"
+                            disabled={!reportReady}
+                            className="bg-brand-gold hover:bg-brand-goldDim text-brand-navy font-display font-extrabold px-12 h-14 disabled:opacity-60 disabled:cursor-not-allowed"
                             onClick={() => {
                                 if (downloadUrl) window.open(downloadUrl, "_blank");
-                                else alert("Your report is being finalized — check your inbox shortly.");
                             }}
                         >
-                            ↓ Download Your Report
+                            {reportReady ? "↓ Download Your Report" : <><Loader2 className="animate-spin mr-2 w-4 h-4" /> Generating your report...</>}
                         </Button>
 
                         {invoiceUrl && (
