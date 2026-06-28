@@ -13,6 +13,20 @@
 const WEBHOOK_URL = "https://faleh-faleh-n8n.qvyj0e.easypanel.host/webhook/9546ae5f-93cc-49b3-8806-881f3627c808";
 // End n8n
 
+// ─── FastAPI backend (Stripe session create/verify) ───
+// Set this in your .env.local / Vite env config, e.g.:
+//   VITE_API_BASE_URL=https://api.franchisemiddleeast.com
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL as string | undefined;
+
+if (!API_BASE_URL) {
+    // Don't throw — just warn loudly, so the rest of the app (assessment wizard etc.)
+    // still works even before this env var is configured.
+    console.warn(
+        "[api.ts] VITE_API_BASE_URL is not set. Payment endpoints (create-checkout-session, " +
+        "verify session) will fail until this is configured."
+    );
+}
+
 // ─── Assessment Questions ───
 
 export interface AssessmentOption {
@@ -295,114 +309,132 @@ const SCORE_CATEGORIES: ScoreCategory[] = [
     },
 ];
 
-export function calculateScore(answers: AssessmentAnswers): ScoreResult {
-    const phaseScores = ASSESSMENT_PHASES.map((phase) => {
-        let earned = 0;
-        let max = 0;
-        phase.questions.forEach((q) => {
-            max += q.maxPoints;
-            if (q.type === "select" && answers[q.id]) {
-                const option = q.options?.find((o) => o.value === answers[q.id]);
-                if (option) earned += option.points;
-            } else if (q.type === "text" && answers[q.id]?.trim()) {
-                // For text answers, give points based on length/quality (simple heuristic)
-                const len = answers[q.id].trim().length;
-                if (len > 100) earned += q.maxPoints;
-                else if (len > 40) earned += Math.round(q.maxPoints * 0.7);
-                else if (len > 10) earned += Math.round(q.maxPoints * 0.4);
-            }
-        });
-        return {
-            phaseId: phase.id,
-            title: phase.title,
-            score: earned,
-            maxScore: max,
-            percentage: max > 0 ? Math.round((earned / max) * 100) : 0,
-        };
-    });
-
-    // Weighted total
-    const totalScore = Math.round(
-        phaseScores.reduce((sum, ps) => {
-            const phase = ASSESSMENT_PHASES.find((p) => p.id === ps.phaseId)!;
-            return sum + (ps.percentage * phase.weight) / 100;
-        }, 0)
-    );
-
-    let category: ScoreCategory;
-    if (totalScore >= 80) category = SCORE_CATEGORIES[0];
-    else if (totalScore >= 60) category = SCORE_CATEGORIES[1];
-    else if (totalScore >= 40) category = SCORE_CATEGORIES[2];
-    else category = SCORE_CATEGORIES[3];
-
-    return {totalScore, phaseScores, category};
-}
-
-// ─── AI Recommendations (mock based on score) ───
-
-export function getRecommendations(result: ScoreResult): string[] {
-    const recs: string[] = [];
-    result.phaseScores.forEach((ps) => {
-        if (ps.phaseId === "A" && ps.percentage < 60) {
-            recs.push("Strengthen your brand identity by completing trademark registration and clearly documenting your USP.");
-        }
-        if (ps.phaseId === "A" && ps.percentage >= 60 && ps.percentage < 80) {
-            recs.push("Consider expanding to at least 2–3 locations to demonstrate brand replicability before franchising.");
-        }
-        if (ps.phaseId === "B" && ps.percentage < 50) {
-            recs.push("Develop a comprehensive Operations Manual covering daily procedures, service standards, and supply chain.");
-            recs.push("Invest in a structured training program that can be easily taught to franchisee teams.");
-        }
-        if (ps.phaseId === "B" && ps.percentage >= 50 && ps.percentage < 80) {
-            recs.push("Standardize your POS/inventory systems and ensure they're easily replicable across new locations.");
-        }
-        if (ps.phaseId === "C" && ps.percentage < 50) {
-            recs.push("Focus on improving net profit margins to at least 15% before pursuing franchise expansion.");
-            recs.push("Secure adequate capital reserves for franchise development costs (legal, marketing, documentation).");
-        }
-        if (ps.phaseId === "C" && ps.percentage >= 50 && ps.percentage < 80) {
-            recs.push("Ensure all licenses and permits are current and work on reducing break-even time for new units.");
-        }
-    });
-    if (result.totalScore >= 80) {
-        recs.push("Your business shows strong franchise readiness. Consider engaging a franchise consultant to begin the formal franchising process.");
-    }
-    return recs.length > 0 ? recs : ["Continue building operational consistency and document all your processes."];
-}
-
 // ─── Submission ───
 
-export interface AssessmentSubmission {
-    businessName: string;
-    contactName: string;
-    email: string;
-    totalScore: number;
-    categoryLabel: string;
-    brandScore: number;
-    opsScore: number;
-    finScore: number;
-    answers: AssessmentAnswers;
-    score: ScoreResult;
+export interface AssessmentSubmissionResponse {
+    // This is what your Cloudinary-upload n8n workflow actually returns —
+    // the report PDF already exists by the time the user reaches payment.
+    secure_url: string;
+    public_id: string;
 }
 
-export async function submitAssessment(data: any): Promise<any> {
+export interface AssessmentPayload {
+    businessDetails: {
+        bizName: string;
+        sector: string;
+        locations: string;
+        years: string;
+    };
+    contactInfo: {
+        fullName: string;
+        email: string;
+        phone: string;
+        role: string;
+    };
+    wizardAnswers: { question: string; selectedAnswer: string }[];
+    assessmentResults: {
+        totalScore: number;
+        brandScore: number;
+        opsScore: number;
+        finScore: number;
+        category: unknown;
+        criticalGaps: unknown;
+    };
+    timestamp: string;
+}
+
+export async function submitAssessment(
+    data: AssessmentPayload
+): Promise<AssessmentSubmissionResponse> {
     const response = await fetch(WEBHOOK_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
     });
+
+    if (!response.ok) {
+        throw new Error(`Assessment submission failed (${response.status})`);
+    }
+
     return response.json();
 }
 
-// ─── Processing Steps ───
+// ─── Payments (FastAPI backend → Stripe) ───
+//
+// IMPORTANT: these call YOUR FastAPI backend, never Stripe directly from the
+// browser, and never the n8n webhook. n8n is reserved for reacting to the
+// `checkout.session.completed` event asynchronously (emailing the PDF, etc.).
 
-export const PROCESSING_STEPS = [
-    {label: "Evaluating brand viability...", duration: 2000},
-    {label: "Auditing operational readiness...", duration: 2500},
-    {label: "Analyzing financial performance...", duration: 2000},
-    {label: "Checking regulatory compliance...", duration: 1500},
-    {label: "Generating your readiness report...", duration: 2000},
-];
+export interface CreateCheckoutSessionPayload {
+    email: string;
+    reportUrl: string;
+    publicId?: string;
+}
 
-// ─── Report Status ───
-export type ReportStatus = "draft" | "analyzing" | "ready";
+export interface CreateCheckoutSessionResponse {
+    checkout_url: string;
+    session_id: string;
+}
+
+export async function createCheckoutSession(
+    payload: CreateCheckoutSessionPayload
+): Promise<CreateCheckoutSessionResponse> {
+    if (!API_BASE_URL) {
+        throw new Error(
+            "API_BASE_URL is not configured (set VITE_API_BASE_URL in your .env)."
+        );
+    }
+
+    const response = await fetch(
+        `${API_BASE_URL}/api/payments/create-checkout-session`,
+        {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                report_url: payload.reportUrl,
+                public_id: payload.publicId,
+                customer_email: payload.email,
+            }),
+        }
+    );
+
+    if (!response.ok) {
+        const errBody = await response.json().catch(() => ({}));
+        throw new Error(
+            errBody.detail || `Failed to create checkout session (${response.status})`
+        );
+    }
+
+    return response.json();
+}
+
+export interface VerifySessionResponse {
+    paid: boolean;
+    email: string | null;
+    report_url: string | null;
+    invoice_url: string | null;
+    invoice_pdf: string | null;
+}
+
+export async function verifyPaymentSession(
+    sessionId: string
+): Promise<VerifySessionResponse> {
+    if (!API_BASE_URL) {
+        throw new Error(
+            "API_BASE_URL is not configured (set VITE_API_BASE_URL in your .env)."
+        );
+    }
+
+    const response = await fetch(
+        `${API_BASE_URL}/api/payments/session/${encodeURIComponent(sessionId)}`
+    );
+
+    if (!response.ok) {
+        throw new Error(`Failed to verify payment session (${response.status})`);
+    }
+
+    return response.json();
+}
+
+// (Removed: unused PROCESSING_STEPS / ReportStatus — Assessment.tsx defines
+// its own PROCESSING_LABELS locally instead.)

@@ -1,5 +1,5 @@
 import {useState, useEffect} from "react";
-import {useNavigate} from "react-router-dom";
+import {useNavigate, useSearchParams} from "react-router-dom";
 import {motion, AnimatePresence} from "framer-motion";
 import {Loader2, Lock, CheckCircle2, ShieldCheck} from "lucide-react";
 import {PieChart, Pie, Cell} from "recharts"; // Added Recharts for visual graphs
@@ -12,7 +12,11 @@ import {
     calculateWizardScore,
     type WizardAnswers,
 } from "@/lib/assessmentData";
-import {submitAssessment} from "@/lib/api";
+import {
+    submitAssessment,
+    createCheckoutSession,
+    verifyPaymentSession,
+} from "@/lib/api";
 
 
 type Screen =
@@ -62,6 +66,7 @@ const MetricCard = ({label, score}: { label: string; score: number }) => {
 };
 const Assessment = () => {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const [screen, setScreen] = useState<Screen>("welcome");
 
     // Business verification
@@ -82,10 +87,13 @@ const Assessment = () => {
 
     // Processing
     const [procStep, setProcStep] = useState(0);
+    const [reportUrl, setReportUrl] = useState<string | null>(null);
+    const [publicId, setPublicId] = useState<string | null>(null);
 
     // Payment
     const [paying, setPaying] = useState(false);
     const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
+    const [invoiceUrl, setInvoiceUrl] = useState<string | null>(null);
 
     const answeredCount = Object.values(answers).reduce(
         (s, m) => s + Object.keys(m).length, 0
@@ -93,16 +101,100 @@ const Assessment = () => {
     const score = calculateWizardScore(answers)
     const phase = WIZARD_PHASES[phaseIdx];
 
-    // Drive processing animation
+    // Drive processing animation AND generate the report (Cloudinary) for real.
+    // The report MUST exist before the user reaches the payment screen, since
+    // the Stripe Checkout Session needs reportUrl in its metadata up front.
     useEffect(() => {
         if (screen !== "processing") return;
-        if (procStep >= PROCESSING_LABELS.length) {
-            const t = setTimeout(() => setScreen("gate"), 700);
-            return () => clearTimeout(t);
-        }
-        const t = setTimeout(() => setProcStep((s) => s + 1), procStep === PROCESSING_LABELS.length - 1 ? 1400 : 1000);
-        return () => clearTimeout(t);
-    }, [screen, procStep]);
+
+        let cancelled = false;
+        setProcStep(0);
+
+        // Cosmetic step animation — purely visual, runs independently of the
+        // real network call below.
+        const stepTimer = setInterval(() => {
+            setProcStep((s) => (s < PROCESSING_LABELS.length - 1 ? s + 1 : s));
+        }, 1100);
+
+        const detailedAnswers = WIZARD_PHASES.flatMap((phase) =>
+            phase.questions.map((q, qIdx) => ({
+                question: q.text,
+                selectedAnswer: q.options[answers[phase.id]?.[qIdx]] || "Not answered",
+            }))
+        );
+
+        const fullPayload = {
+            businessDetails: {bizName, sector, locations, years},
+            contactInfo: {fullName, email, phone, role},
+            wizardAnswers: detailedAnswers,
+            assessmentResults: {
+                totalScore: score.totalScore,
+                brandScore: score.pillarScores[0]?.percentage ?? 0,
+                opsScore: score.pillarScores[1]?.percentage ?? 0,
+                finScore: score.pillarScores[2]?.percentage ?? 0,
+                category: score.category,
+                criticalGaps: score.criticalGaps,
+            },
+            timestamp: new Date().toISOString(),
+        };
+
+        // Don't let the animation finish faster than the real call —
+        // keeps the experience from feeling broken if Cloudinary is fast.
+        const MIN_VISUAL_MS = PROCESSING_LABELS.length * 1100 + 700;
+        const startedAt = Date.now();
+
+        submitAssessment(fullPayload)
+            .then((result) => {
+                if (cancelled) return;
+                setReportUrl(result.secure_url);
+                setPublicId(result.public_id);
+
+                const elapsed = Date.now() - startedAt;
+                const remaining = Math.max(MIN_VISUAL_MS - elapsed, 0);
+                setTimeout(() => {
+                    if (cancelled) return;
+                    setProcStep(PROCESSING_LABELS.length);
+                    setScreen("gate");
+                }, remaining);
+            })
+            .catch((err) => {
+                if (cancelled) return;
+                console.error("Report generation failed:", err);
+                clearInterval(stepTimer);
+                alert(
+                    "We couldn't generate your report. Please try again — if this keeps happening, contact support."
+                );
+                setScreen("wizard"); // let them retry rather than getting stuck on "processing" forever
+            });
+
+        return () => {
+            cancelled = true;
+            clearInterval(stepTimer);
+        };
+    }, [screen]);
+
+useEffect(() => {
+    const sessionId = searchParams.get("session_id");
+    if (!sessionId) return;
+
+    setScreen("confirm");
+
+    verifyPaymentSession(sessionId)
+        .then((data) => {
+            if (data.paid) {
+                // report_url is already a direct, public Cloudinary link —
+                // no extra backend endpoint needed to fetch the file.
+                if (data.report_url) setDownloadUrl(data.report_url);
+                if (data.invoice_url) setInvoiceUrl(data.invoice_url);
+            } else {
+                // Payment hasn't registered as 'paid' yet (rare, but possible if
+                // the user lands here before Stripe finalizes). The email will
+                // still arrive once the n8n webhook fires.
+                console.warn("Session not marked as paid yet:", data);
+            }
+        })
+        .catch((err) => console.error("Failed to verify payment session:", err));
+}, [searchParams]);
 
     const selectAnswer = (qIdx: number, optIdx: number) => {
         setAnswers((prev) => ({
@@ -127,59 +219,38 @@ const Assessment = () => {
     };
 
 const handlePay = async () => {
+  if (!email) {
+    alert("Missing email — please go back and complete the contact step.");
+    return;
+  }
+
+  if (!reportUrl) {
+    // Shouldn't normally happen — the report is generated during the
+    // "processing" screen, before the user ever reaches "payment".
+    alert("Your report isn't ready yet. Please wait a moment and try again.");
+    return;
+  }
+
   setPaying(true);
 
-  // Map the indexes to the actual question and answer text
-  const detailedAnswers = WIZARD_PHASES.flatMap((phase) =>
-    phase.questions.map((q, qIdx) => ({
-      question: q.text,
-      selectedAnswer: q.options[answers[phase.id]?.[qIdx]] || "Not answered"
-    }))
-  );
-
-  const fullPayload = {
-    businessDetails: { bizName, sector, locations, years },
-    contactInfo: { fullName, email, phone, role },
-    wizardAnswers: detailedAnswers, // Now contains text instead of indexes
-    assessmentResults: {
-      totalScore: score.totalScore,
-      brandScore: score.pillarScores[0]?.percentage ?? 0,
-      opsScore: score.pillarScores[1]?.percentage ?? 0,
-      finScore: score.pillarScores[2]?.percentage ?? 0,
-      category: score.category,
-      criticalGaps: score.criticalGaps
-    },
-    timestamp: new Date().toISOString()
-  };
-
   try {
-    await submitAssessment(fullPayload);
-    setScreen("confirm");
+    // Ask the FastAPI backend to create a Stripe Checkout Session,
+    // carrying the already-generated report link through as metadata.
+    const {checkout_url} = await createCheckoutSession({
+      email,
+      reportUrl,
+      publicId: publicId ?? undefined,
+    });
+
+    // Redirect the browser to Stripe's hosted Checkout page.
+    // Do NOT setPaying(false) here — we're navigating away.
+    window.location.href = checkout_url;
   } catch (e) {
-    console.error("Submission failed:", e);
-    alert("There was an issue processing your request.");
-  } finally {
+    console.error("Payment initiation failed:", e);
+    alert("There was an issue starting your payment. Please try again.");
     setPaying(false);
   }
 };
-
-    const handlePay1 = async () => {
-        setPaying(true);
-
-        // TEMPORARY BYPASS FOR TESTING
-        console.log("Skipping payment API call for testing.");
-        setDownloadUrl("https://example.com/test-report.pdf");
-        setScreen("confirm");
-        setPaying(false);
-
-        /*
-        // RESTORE THIS LATER
-        try {
-          const res = await submitAssessment({ ... });
-          // ... logic
-        } catch (e) { ... }
-        */
-    };
 
     return (
         <div className="min-h-screen font-sans">
@@ -561,23 +632,25 @@ const handlePay = async () => {
                 <p className="font-display text-xl font-extrabold text-brand-navy">AED 3,500</p>
               </div>
 
+              {/*
+                Card details are intentionally NOT collected here. Stripe Checkout
+                handles card entry on Stripe's own hosted page — your app never
+                touches raw card numbers/CVV, which keeps you out of PCI scope.
+              */}
               <div className="bg-white border border-brand-border rounded-xl p-7 space-y-4">
-                <p className="text-[11px] font-bold uppercase tracking-wide text-brand-muted">Card Details</p>
-                <Input placeholder="Name on Card" />
-                <Input placeholder="0000 0000 0000 0000" />
-                <div className="grid grid-cols-2 gap-4">
-                  <Input placeholder="MM / YY" />
-                  <Input placeholder="CVV" />
+                <div className="flex items-center gap-2 text-xs text-brand-muted">
+                  <ShieldCheck className="w-4 h-4 text-brand-gold shrink-0" />
+                  <span>You'll be redirected to Stripe's secure checkout to enter your card details.</span>
                 </div>
-                <div className="h-px bg-brand-border my-4" />
-                <p className="text-[11px] font-bold uppercase tracking-wide text-brand-muted">Billing Details</p>
-                <Input placeholder="Company name (for receipt)" />
-                <Input placeholder="VAT number (optional)" />
 
-                <Button disabled={paying} onClick={handlePay} className="w-full h-14 bg-brand-gold hover:bg-brand-goldDim text-brand-navy font-display font-extrabold mt-2">
-                  {paying ? <Loader2 className="animate-spin" /> : "🔒 Pay AED 3,500 Securely"}
+                <Button
+                  disabled={paying}
+                  onClick={handlePay}
+                  className="w-full h-14 bg-brand-gold hover:bg-brand-goldDim text-brand-navy font-display font-extrabold mt-2"
+                >
+                  {paying ? <Loader2 className="animate-spin" /> : "🔒 Continue to Secure Checkout"}
                 </Button>
-                <p className="text-center text-xs text-brand-muted">🔐 256-bit SSL encryption</p>
+                <p className="text-center text-xs text-brand-muted">🔐 Payments are processed by Stripe — 256-bit SSL encryption</p>
               </div>
             </div>
           </motion.div>
@@ -624,6 +697,18 @@ const handlePay = async () => {
                         >
                             ↓ Download Your Report
                         </Button>
+
+                        {invoiceUrl && (
+                            <a
+                                href={invoiceUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-white/50 text-sm mt-4 underline hover:text-white"
+                            >
+                                View / Download Invoice
+                            </a>
+                        )}
+
                         <button className="text-white/30 text-xs mt-8 hover:text-white"
                                 onClick={() => navigate("/")}>Return home
                         </button>
