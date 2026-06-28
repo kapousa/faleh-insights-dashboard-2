@@ -7,7 +7,7 @@
 // ─── FastAPI backend (Stripe session create/verify) ───
 // Set this in your .env.local / Vite env config, e.g.:
 //   VITE_API_BASE_URL=https://api.franchisemiddleeast.com
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL as string | "https://faleh-faleh-payment-api.qvyj0e.easypanel.host/";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL as string | undefined;
 
 if (!API_BASE_URL) {
     // Don't throw — just warn loudly, so the rest of the app (assessment wizard etc.)
