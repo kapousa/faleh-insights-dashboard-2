@@ -174,27 +174,27 @@ const Assessment = () => {
         };
     }, [screen]);
 
-useEffect(() => {
-    const sessionId = searchParams.get("session_id");
-    if (!sessionId) return;
+    useEffect(() => {
+        const sessionId = searchParams.get("session_id");
+        if (!sessionId) return;
 
-    setScreen("confirm");
+        setScreen("confirm");
 
-    // One check is enough — we no longer wait for the report itself.
-    // It's emailed independently by the n8n webhook chain; the customer
-    // doesn't need to watch a live status for that in the browser.
-    verifyPaymentSession(sessionId)
-        .then((data) => {
-            setPaymentConfirmed(data.paid);
-            if (data.invoice_url) setInvoiceUrl(data.invoice_url);
-            if (!data.paid) {
-                console.warn("Session not marked as paid yet:", data);
-            }
-        })
-        .catch((err) => {
-            console.error("Failed to verify payment session:", err);
-        });
-}, [searchParams]);
+        // One check is enough — we no longer wait for the report itself.
+        // It's emailed independently by the n8n webhook chain; the customer
+        // doesn't need to watch a live status for that in the browser.
+        verifyPaymentSession(sessionId)
+            .then((data) => {
+                setPaymentConfirmed(data.paid);
+                if (data.invoice_url) setInvoiceUrl(data.invoice_url);
+                if (!data.paid) {
+                    console.warn("Session not marked as paid yet:", data);
+                }
+            })
+            .catch((err) => {
+                console.error("Failed to verify payment session:", err);
+            });
+    }, [searchParams]);
 
     const selectAnswer = (qIdx: number, optIdx: number) => {
         setAnswers((prev) => ({
@@ -218,39 +218,39 @@ useEffect(() => {
         }
     };
 
-const handlePay = async () => {
-  if (!email) {
-    alert("Missing email — please go back and complete the contact step.");
-    return;
-  }
+    const handlePay = async () => {
+        if (!email) {
+            alert("Missing email — please go back and complete the contact step.");
+            return;
+        }
 
-  if (!submissionId) {
-    // Shouldn't normally happen — the submission is saved during the
-    // "processing" screen, before the user ever reaches "payment".
-    alert("Your assessment isn't saved yet. Please wait a moment and try again.");
-    return;
-  }
+        if (!submissionId) {
+            // Shouldn't normally happen — the submission is saved during the
+            // "processing" screen, before the user ever reaches "payment".
+            alert("Your assessment isn't saved yet. Please wait a moment and try again.");
+            return;
+        }
 
-  setPaying(true);
+        setPaying(true);
 
-  try {
-    // Ask the FastAPI backend to create a Stripe Checkout Session,
-    // carrying the submission_id through as metadata. The actual report
-    // doesn't exist yet — it gets generated after payment succeeds.
-    const {checkout_url} = await createCheckoutSession({
-      email,
-      submissionId,
-    });
+        try {
+            // Ask the FastAPI backend to create a Stripe Checkout Session,
+            // carrying the submission_id through as metadata. The actual report
+            // doesn't exist yet — it gets generated after payment succeeds.
+            const {checkout_url} = await createCheckoutSession({
+                email,
+                submissionId,
+            });
 
-    // Redirect the browser to Stripe's hosted Checkout page.
-    // Do NOT setPaying(false) here — we're navigating away.
-    window.location.href = checkout_url;
-  } catch (e) {
-    console.error("Payment initiation failed:", e);
-    alert("There was an issue starting your payment. Please try again.");
-    setPaying(false);
-  }
-};
+            // Redirect the browser to Stripe's hosted Checkout page.
+            // Do NOT setPaying(false) here — we're navigating away.
+            window.location.href = checkout_url;
+        } catch (e) {
+            console.error("Payment initiation failed:", e);
+            alert("There was an issue starting your payment. Please try again.");
+            setPaying(false);
+        }
+    };
 
     return (
         <div className="min-h-screen font-sans">
@@ -263,10 +263,10 @@ const handlePay = async () => {
                             className="absolute w-[500px] h-[500px] rounded-full bg-brand-gold/10 blur-3xl top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none"/>
                         <div className="flex items-center gap-3 mb-14 relative z-10">
                             <img
-    src="/logo.png"
-    alt="FALEH Logo"
-    className="w-11 h-11 object-contain"
-/>
+                                src="/logo.png"
+                                alt="FALEH Logo"
+                                className="w-11 h-11 object-contain"
+                            />
                             <span className="font-display text-2xl font-extrabold text-white">FALEH</span>
                         </div>
                         <p className="text-brand-gold text-xs font-bold uppercase tracking-[3px] mb-5 relative z-10">Franchise
@@ -441,10 +441,10 @@ const handlePay = async () => {
                             className="w-full md:w-[280px] bg-brand-navy p-10 flex flex-col shrink-0 md:sticky md:top-0 md:h-screen">
                             <div className="flex items-center gap-2 mb-10">
                                 <img
-    src="/logo.png"
-    alt="FALEH Logo"
-    className="w-11 h-11 object-contain"
-/>                            <span className="font-display text-2xl font-extrabold text-white">FALEH</span>
+                                    src="/logo.png"
+                                    alt="FALEH Logo"
+                                    className="w-11 h-11 object-contain"
+                                /> <span className="font-display text-2xl font-extrabold text-white">FALEH</span>
 
                             </div>
                             <p className="text-[10px] font-bold uppercase tracking-[3px] text-brand-gold mb-1">{phase.phaseLabel}</p>
@@ -527,10 +527,10 @@ const handlePay = async () => {
                                 className="min-h-screen bg-brand-navy flex flex-col items-center justify-center px-6 text-center">
                         <div className="flex items-center gap-3 mb-16">
                             <img
-    src="/logo.png"
-    alt="FALEH Logo"
-    className="w-11 h-11 object-contain"
-/>
+                                src="/logo.png"
+                                alt="FALEH Logo"
+                                className="w-11 h-11 object-contain"
+                            />
                             <span className="font-display text-xl font-extrabold text-white">FALEH AUDIT ENGINE</span>
                         </div>
                         <Loader2 className="w-16 h-16 text-brand-gold animate-spin mb-10"/>
@@ -606,55 +606,62 @@ const handlePay = async () => {
                             </div>
 
                             <Button
-  onClick={() => setScreen("payment")} // Navigate to the fake payment screen
-  className="bg-brand-gold hover:bg-brand-goldDim text-brand-navy font-display font-extrabold px-12 h-16 text-lg w-full md:w-auto"
->
-  Pay AED 3,500 to Unlock Full Report
-</Button>
+                                onClick={() => setScreen("payment")} // Navigate to the fake payment screen
+                                className="bg-brand-gold hover:bg-brand-goldDim text-brand-navy font-display font-extrabold px-12 h-16 text-lg w-full md:w-auto"
+                            >
+                                Pay AED 3,500 to Unlock Full Report
+                            </Button>
                         </div>
                     </motion.div>
                 )}
 
                 // Inside your Payment screen (screen === "payment")
                 {screen === "payment" && (
-          <motion.div key="payment" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }}
-            className="min-h-screen bg-brand-slate flex items-center justify-center px-6 py-12">
-            <div className="max-w-md w-full">
-              <button onClick={() => setScreen("gate")} className="text-sm text-brand-muted hover:text-brand-navy mb-8">← Back</button>
-              <h2 className="font-display text-2xl font-extrabold text-brand-navy mb-1">Complete your payment</h2>
-              <p className="text-sm text-brand-muted mb-7">Your report will be delivered instantly after payment.</p>
+                    <motion.div key="payment" initial={{opacity: 0, x: 20}} animate={{opacity: 1, x: 0}}
+                                exit={{opacity: 0}}
+                                className="min-h-screen bg-brand-slate flex items-center justify-center px-6 py-12">
+                        <div className="max-w-md w-full">
+                            <button onClick={() => setScreen("gate")}
+                                    className="text-sm text-brand-muted hover:text-brand-navy mb-8">← Back
+                            </button>
+                            <h2 className="font-display text-2xl font-extrabold text-brand-navy mb-1">Complete your
+                                payment</h2>
+                            <p className="text-sm text-brand-muted mb-7">Your report will be delivered instantly after
+                                payment.</p>
 
-              <div className="bg-white border border-brand-border rounded-xl p-5 flex justify-between items-center mb-6">
-                <div>
-                  <p className="text-sm font-semibold text-brand-navy">Franchise Readiness Report</p>
-                  <p className="text-xs text-brand-muted">Full report + Expert Debrief Call</p>
-                </div>
-                <p className="font-display text-xl font-extrabold text-brand-navy">AED 3,500</p>
-              </div>
+                            <div
+                                className="bg-white border border-brand-border rounded-xl p-5 flex justify-between items-center mb-6">
+                                <div>
+                                    <p className="text-sm font-semibold text-brand-navy">Franchise Readiness Report</p>
+                                    <p className="text-xs text-brand-muted">Full report + Expert Debrief Call</p>
+                                </div>
+                                <p className="font-display text-xl font-extrabold text-brand-navy">AED 3,500</p>
+                            </div>
 
-              {/*
+                            {/*
                 Card details are intentionally NOT collected here. Stripe Checkout
                 handles card entry on Stripe's own hosted page — your app never
                 touches raw card numbers/CVV, which keeps you out of PCI scope.
               */}
-              <div className="bg-white border border-brand-border rounded-xl p-7 space-y-4">
-                <div className="flex items-center gap-2 text-xs text-brand-muted">
-                  <ShieldCheck className="w-4 h-4 text-brand-gold shrink-0" />
-                  <span>You'll be redirected to Stripe's secure checkout to enter your card details.</span>
-                </div>
+                            <div className="bg-white border border-brand-border rounded-xl p-7 space-y-4">
+                                <div className="flex items-center gap-2 text-xs text-brand-muted">
+                                    <ShieldCheck className="w-4 h-4 text-brand-gold shrink-0"/>
+                                    <span>You'll be redirected to Stripe's secure checkout to enter your card details.</span>
+                                </div>
 
-                <Button
-                  disabled={paying}
-                  onClick={handlePay}
-                  className="w-full h-14 bg-brand-gold hover:bg-brand-goldDim text-brand-navy font-display font-extrabold mt-2"
-                >
-                  {paying ? <Loader2 className="animate-spin" /> : "🔒 Continue to Secure Checkout"}
-                </Button>
-                <p className="text-center text-xs text-brand-muted">🔐 Payments are processed by Stripe — 256-bit SSL encryption</p>
-              </div>
-            </div>
-          </motion.div>
-        )}
+                                <Button
+                                    disabled={paying}
+                                    onClick={handlePay}
+                                    className="w-full h-14 bg-brand-gold hover:bg-brand-goldDim text-brand-navy font-display font-extrabold mt-2"
+                                >
+                                    {paying ? <Loader2 className="animate-spin"/> : "🔒 Continue to Secure Checkout"}
+                                </Button>
+                                <p className="text-center text-xs text-brand-muted">🔐 Payments are processed by Stripe —
+                                    256-bit SSL encryption</p>
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
 
                 {screen === "confirm" && (
                     <motion.div key="confirm" initial={{opacity: 0, scale: 0.9}} animate={{opacity: 1, scale: 1}}
@@ -670,12 +677,16 @@ const handlePay = async () => {
                             </>
                         ) : (
                             <>
-                                <div
-                                    className="w-20 h-20 rounded-full bg-white/10 border-2 border-white/20 flex items-center justify-center mb-8">
-                                    <Loader2 className="animate-spin w-8 h-8 text-white/60" />
-                                </div>
-                                <p className="text-xs font-bold uppercase tracking-[3px] text-white/40 mb-4">Verifying
-                                    Payment</p>
+                                <div className="flex items-center gap-3 mb-14 relative z-10">
+                            <img
+    src="/logo.png"
+    alt="FALEH Logo"
+    className="w-11 h-11 object-contain"
+/>
+                            <span className="font-display text-2xl font-extrabold text-white">FALEH</span>
+                        </div>
+                                <p className="text-xs font-bold uppercase tracking-[3px] text-white/40 mb-4">
+                                    Payment Confirmed</p>
                             </>
                         )}
                         <h2 className="font-display text-3xl md:text-4xl font-extrabold text-white max-w-md mb-4">
