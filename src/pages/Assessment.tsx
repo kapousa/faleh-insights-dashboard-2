@@ -91,9 +91,7 @@ const Assessment = () => {
 
     // Payment
     const [paying, setPaying] = useState(false);
-    const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
     const [invoiceUrl, setInvoiceUrl] = useState<string | null>(null);
-    const [reportReady, setReportReady] = useState(false);
     const [paymentConfirmed, setPaymentConfirmed] = useState(false);
 
     const answeredCount = Object.values(answers).reduce(
@@ -182,56 +180,20 @@ useEffect(() => {
 
     setScreen("confirm");
 
-    let cancelled = false;
-    let attempts = 0;
-    // Report generation (Executive Summary flow) runs after payment and can
-    // take a while — poll every 4s, give up showing the live download button
-    // after ~2 minutes (the email will still arrive regardless of this timer).
-    const MAX_ATTEMPTS = 30;
-    const POLL_INTERVAL_MS = 4000;
-
-    const poll = () => {
-        if (cancelled) return;
-        attempts += 1;
-
-        verifyPaymentSession(sessionId)
-            .then((data) => {
-                if (cancelled) return;
-
-                if (data.paid) {
-                    setPaymentConfirmed(true);
-                    if (data.invoice_url) setInvoiceUrl(data.invoice_url);
-
-                    if (data.report_ready && data.report_url) {
-                        setDownloadUrl(data.report_url);
-                        setReportReady(true);
-                        return; // done — stop polling
-                    }
-                } else {
-                    // Payment hasn't registered as 'paid' yet (rare, but possible
-                    // if the user lands here before Stripe finalizes).
-                    console.warn("Session not marked as paid yet:", data);
-                }
-
-                if (attempts < MAX_ATTEMPTS) {
-                    setTimeout(poll, POLL_INTERVAL_MS);
-                }
-                // After MAX_ATTEMPTS, stop polling silently — the confirm
-                // screen's copy already tells the user to check their email.
-            })
-            .catch((err) => {
-                console.error("Failed to verify payment session:", err);
-                if (!cancelled && attempts < MAX_ATTEMPTS) {
-                    setTimeout(poll, POLL_INTERVAL_MS);
-                }
-            });
-    };
-
-    poll();
-
-    return () => {
-        cancelled = true;
-    };
+    // One check is enough — we no longer wait for the report itself.
+    // It's emailed independently by the n8n webhook chain; the customer
+    // doesn't need to watch a live status for that in the browser.
+    verifyPaymentSession(sessionId)
+        .then((data) => {
+            setPaymentConfirmed(data.paid);
+            if (data.invoice_url) setInvoiceUrl(data.invoice_url);
+            if (!data.paid) {
+                console.warn("Session not marked as paid yet:", data);
+            }
+        })
+        .catch((err) => {
+            console.error("Failed to verify payment session:", err);
+        });
 }, [searchParams]);
 
     const selectAnswer = (qIdx: number, optIdx: number) => {
@@ -717,17 +679,16 @@ const handlePay = async () => {
                             </>
                         )}
                         <h2 className="font-display text-3xl md:text-4xl font-extrabold text-white max-w-md mb-4">
-                            {reportReady ? "Your report is ready" : "Your report is being generated"}
+                            Your report is on its way
                         </h2>
                         <p className="text-white/45 max-w-sm mb-12">
-                            {reportReady
-                                ? "We've also sent your Franchise Readiness Report to your inbox."
-                                : "This usually takes under a minute. We'll also email it to you the moment it's ready — feel free to keep this tab open or close it and check your inbox."}
+                            We're putting together your Franchise Readiness Report now and will email it to you shortly,
+                            along with your invoice. No need to wait here — it'll be in your inbox soon.
                         </p>
 
                         <div className="flex flex-col gap-4 max-w-md w-full mb-12">
                             {[
-                                ["1", "Download your PDF report", "Your full assessment will be in your inbox shortly. Review it before your debrief call."],
+                                ["1", "Check your inbox", "Your full PDF report and invoice will arrive by email shortly. Review it before your debrief call."],
                                 ["2", "Book your 15-minute debrief", "A calendar link is included in your email. Book a slot with an FME consultant within 7 days."],
                                 ["3", "Start your 90-day roadmap", "Your report includes a prioritised action plan. Begin with the highest-impact items first."],
                             ].map(([n, t, d]) => (
@@ -743,28 +704,18 @@ const handlePay = async () => {
                             ))}
                         </div>
 
-                        <Button
-                            disabled={!reportReady}
-                            className="bg-brand-gold hover:bg-brand-goldDim text-brand-navy font-display font-extrabold px-12 h-14 disabled:opacity-60 disabled:cursor-not-allowed"
-                            onClick={() => {
-                                if (downloadUrl) window.open(downloadUrl, "_blank");
-                            }}
-                        >
-                            {reportReady ? "↓ Download Your Report" : <><Loader2 className="animate-spin mr-2 w-4 h-4" /> Generating your report...</>}
-                        </Button>
-
                         {invoiceUrl && (
                             <a
                                 href={invoiceUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-white/50 text-sm mt-4 underline hover:text-white"
+                                className="text-white/50 text-sm mb-4 underline hover:text-white"
                             >
                                 View / Download Invoice
                             </a>
                         )}
 
-                        <button className="text-white/30 text-xs mt-8 hover:text-white"
+                        <button className="text-white/30 text-xs mt-4 hover:text-white"
                                 onClick={() => navigate("/")}>Return home
                         </button>
                     </motion.div>
