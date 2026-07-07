@@ -79,6 +79,7 @@ const Assessment = () => {
     const [fullName, setFullName] = useState("");
     const [email, setEmail] = useState("");
     const [phone, setPhone] = useState("");
+    const [contactErrors, setContactErrors] = useState<{email?: string; phone?: string}>({});
     const [role, setRole] = useState("");
 
     // Wizard
@@ -252,6 +253,34 @@ const Assessment = () => {
         }
     };
 
+    // ─── Contact field validators ─────────────────────────────────────────────
+    const FREE_EMAIL_DOMAINS = [
+        "gmail.com","yahoo.com","hotmail.com","outlook.com","live.com",
+        "icloud.com","me.com","mac.com","aol.com","protonmail.com",
+        "proton.me","yandex.com","mail.com","gmx.com","zoho.com",
+        "yahoo.co.uk","hotmail.co.uk","msn.com","googlemail.com",
+    ];
+
+    const validateBusinessEmail = (value: string): string | undefined => {
+        if (!value.trim()) return "Email is required.";
+        if (!value.includes("@") || !value.includes(".")) return "Enter a valid email address.";
+        const domain = value.split("@")[1]?.toLowerCase();
+        if (!domain) return "Enter a valid email address.";
+        if (FREE_EMAIL_DOMAINS.includes(domain)) {
+            return "Please use your business email address (not Gmail, Yahoo, etc.).";
+        }
+        return undefined;
+    };
+
+    const validatePhone = (value: string): string | undefined => {
+        if (!value.trim()) return "Phone number is required.";
+        const digits = value.replace(/[\s\-().+]/g, "");
+        if (!/^\d{7,15}$/.test(digits)) {
+            return "Enter a valid phone number (7–15 digits, e.g. +971 50 123 4567).";
+        }
+        return undefined;
+    };
+
     return (
         <div className="min-h-screen font-sans">
             <AnimatePresence mode="wait">
@@ -393,15 +422,35 @@ const Assessment = () => {
                                     <Label
                                         className="text-xs font-bold uppercase tracking-wide text-brand-navy mb-2 block">Email
                                         Address</Label>
-                                    <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
-                                           placeholder="you@yourbusiness.com"/>
+                                    <Input type="email" value={email}
+                                           onChange={(e) => {
+                                               setEmail(e.target.value);
+                                               setContactErrors(prev => ({...prev, email: undefined}));
+                                           }}
+                                           onBlur={() => setContactErrors(prev => ({...prev, email: validateBusinessEmail(email)}))}
+                                           placeholder="you@yourbusiness.com"
+                                           className={contactErrors.email ? "border-red-400 focus-visible:ring-red-400" : ""}
+                                    />
+                                    {contactErrors.email && (
+                                        <p className="text-xs text-red-500 mt-1">{contactErrors.email}</p>
+                                    )}
                                 </div>
                                 <div>
                                     <Label
                                         className="text-xs font-bold uppercase tracking-wide text-brand-navy mb-2 block">WhatsApp
                                         Number</Label>
-                                    <Input value={phone} onChange={(e) => setPhone(e.target.value)}
-                                           placeholder="+971 50 000 0000"/>
+                                    <Input value={phone}
+                                           onChange={(e) => {
+                                               setPhone(e.target.value);
+                                               setContactErrors(prev => ({...prev, phone: undefined}));
+                                           }}
+                                           onBlur={() => setContactErrors(prev => ({...prev, phone: validatePhone(phone)}))}
+                                           placeholder="+971 50 000 0000"
+                                           className={contactErrors.phone ? "border-red-400 focus-visible:ring-red-400" : ""}
+                                    />
+                                    {contactErrors.phone && (
+                                        <p className="text-xs text-red-500 mt-1">{contactErrors.phone}</p>
+                                    )}
                                 </div>
                                 <div>
                                     <Label
@@ -420,11 +469,16 @@ const Assessment = () => {
                             <Button
                                 className="w-full mt-8 h-12 bg-brand-navy hover:bg-brand-navyDim text-white font-display font-extrabold"
                                 onClick={() => {
-                                    if (!fullName.trim() || !email.includes("@") || !phone.trim() || !role) {
+                                    const emailErr = validateBusinessEmail(email);
+                                    const phoneErr = validatePhone(phone);
+                                    setContactErrors({email: emailErr, phone: phoneErr});
+
+                                    if (!fullName.trim() || !role) {
                                         alert("Please complete all fields to continue.");
                                         return;
                                     }
-                                    // Changed from setScreen("wizard") to ensure clean flow
+                                    if (emailErr || phoneErr) return;
+
                                     setScreen("wizard");
                                 }}
                             >
